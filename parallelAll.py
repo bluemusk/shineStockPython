@@ -402,7 +402,6 @@ def initCond(df, dfCon):
     newDf['pur_gubn5'] = df['pur_gubn5']
     
     for i in range(0, cond.shape[0]):
-        print('i : ' + str(i) + ' ' +  cond.iloc[i,0].split('>')[0])
         con = cond.iloc[i,0].split('>')[0]
         try:
             val = float(cond.iloc[i,0].split('>')[1])
@@ -2669,8 +2668,8 @@ def checkConditionPrevRun2(finalData, data, condDcnt, condDvsb):
 ###############################################################################################################################
 # 파라미터 세팅
 ###############################################################################################################################
-name = 'auto_buy'   #name setting
-paramLimitRatio = 1
+name = 'sbuy2cmart4_colm'   #name setting
+paramLimitRatio = 0.5
 
 paramlvl        = 8
 paramrRatYn     = 'Y'
