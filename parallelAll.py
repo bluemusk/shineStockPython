@@ -400,9 +400,9 @@ def initCond(df, dfCon):
     newDf['ymd'] = df['yyyymmdd']
     newDf['stCd'] = df['stock_code']
     newDf['pur_gubn5'] = df['pur_gubn5']
-
+    
     for i in range(0, cond.shape[0]):
-        # print(i)
+        print('i : ' + str(i) + ' ' +  cond.iloc[i,0].split('>')[0])
         con = cond.iloc[i,0].split('>')[0]
         try:
             val = float(cond.iloc[i,0].split('>')[1])
@@ -416,15 +416,18 @@ def initCond(df, dfCon):
         condDf = condDf.append(pd.DataFrame([(con, val, 'LT', colname, type)], columns=['condi', 'value', 'cal', 'colname', 'type']))
         condDf = condDf[~condDf['condi'].str.contains('-')]
 
-        if '-' not in str(con) and '+' not in str(con):
-            # 조건을 만족하면(condi > value) 값에 1을 넣고 아니면 0
-            if if_float(val):
-                tmpBoolP = df[con] > val
-            else:
-                tmpBoolP = df[con] > df[val]
+        try:
+            if '-' not in str(con) and '+' not in str(con):
+                # 조건을 만족하면(condi > value) 값에 1을 넣고 아니면 0
+                if if_float(val):
+                    tmpBoolP = df[con] > val
+                else:
+                    tmpBoolP = df[con] > df[val]
 
-            newDf[colname] = tmpBoolP.apply(lambda x: 1 if x == True else 0)
-            # newDf.append(tmpBoolP.apply(lambda x: 1 if x == True else 0), colname=['tree' + str(i)], ignore_index=True)
+                newDf[colname] = tmpBoolP.apply(lambda x: 1 if x == True else 0)
+                # newDf.append(tmpBoolP.apply(lambda x: 1 if x == True else 0), colname=['tree' + str(i)], ignore_index=True)
+        except Exception as e:
+            pass
 
     return newDf, condDf
 
@@ -2666,8 +2669,8 @@ def checkConditionPrevRun2(finalData, data, condDcnt, condDvsb):
 ###############################################################################################################################
 # 파라미터 세팅
 ###############################################################################################################################
-name = 'sbuy2cmart4_colm'   #name setting
-paramLimitRatio = 0.5
+name = 'auto_buy'   #name setting
+paramLimitRatio = 1
 
 paramlvl        = 8
 paramrRatYn     = 'Y'
@@ -2698,7 +2701,7 @@ fResult = run(newDff, paramlvl, paramLimitRatio, dfConF, paramrRatYn, paramrRatN
 ###############################################################################################################################
 # 실제 데이터에 대입하여 조건식들이 맞는지 확인
 ###############################################################################################################################
-fResult2 = checkConditionPrevRun2(fResult, df, 10, 11) # 실행결과,원 데이터,condDcnt, condDvsb를 넣는다..
+fResult2 = checkConditionPrevRun2(fResult, df, 9, 10) # 실행결과,원 데이터,condDcnt, condDvsb를 넣는다..
 ###############################################################################################################################
 # 상위레벨 조건 지우기 
 ###############################################################################################################################
