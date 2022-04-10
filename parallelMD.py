@@ -1135,21 +1135,21 @@ fResult = fResult.iloc[:,2:fResult.shape[1]].drop_duplicates()
 fResult = fResult.sort_values('bvsd', ascending=False)
 fResult.to_csv("C:/Users/Shine_anal/Desktop/kbuy1_20210906_dtree.csv")
 
-(sma10_ang1__sma20_ang2 > 0.0) AND close_price_ang2 > 0.0 AND high5d_low5d_rate <= 28.0 AND fast3D_ang2 <= 3.0 AND fast5D > m14_slow3k AND dis60_ang1_dis20_ang2 <= 9.0 AND DIp_ang1_Adx_ang1 <= 8.0 AND nmind_nmind_sig <= 32.0
-
-df[
-(
-        (   (df['sma10_ang1__sma20_ang2'] > 0.0)
-& (df['fast5D'] > df['m14_slow3k'] ))
-& (df['close_price_ang2'] > 0.0  )
-& (df['high5d_low5d_rate'] <= 28)
-& (df['fast3D_ang2'] <= 3.0)
- & (df['dis60_ang1_dis20_ang2'] <= 9.0)
-& (df['DIp_ang1_Adx_ang1'] <= 8 )
-& (df['nmind_nmind_sig'] <= 32 )
-)
-].value_counts('pur_gubn5')
-
-pur_gubn5
-0    14
-1     1
+# (sma10_ang1__sma20_ang2 > 0.0) AND close_price_ang2 > 0.0 AND high5d_low5d_rate <= 28.0 AND fast3D_ang2 <= 3.0 AND fast5D > m14_slow3k AND dis60_ang1_dis20_ang2 <= 9.0 AND DIp_ang1_Adx_ang1 <= 8.0 AND nmind_nmind_sig <= 32.0
+#
+# df[
+# (
+#         (   (df['sma10_ang1__sma20_ang2'] > 0.0)
+# & (df['fast5D'] > df['m14_slow3k'] ))
+# & (df['close_price_ang2'] > 0.0  )
+# & (df['high5d_low5d_rate'] <= 28)
+# & (df['fast3D_ang2'] <= 3.0)
+#  & (df['dis60_ang1_dis20_ang2'] <= 9.0)
+# & (df['DIp_ang1_Adx_ang1'] <= 8 )
+# & (df['nmind_nmind_sig'] <= 32 )
+# )
+# ].value_counts('pur_gubn5')
+#
+# pur_gubn5
+# 0    14
+# 1     1
