@@ -1,4 +1,5 @@
 
+
 ######################################################################################################
 # coding=utf-8
 import pandas as pd
@@ -106,8 +107,8 @@ def similarDel(result, data):
 
     finalSet = pd.DataFrame()
 
-    for y in data.iloc[:, 14:data.shape[1]].columns:
-        # for y in data.iloc[:, 14:50].columns:
+    for y in data.iloc[:, 5:data.shape[1]].columns:
+        # for y in data.iloc[:, 5:50].columns:
         x = resultGt[(resultGt['col'] == y)]
         # x = resultGt[(resultGt['col'] == 'macd')]
         chkNum = 0
@@ -129,8 +130,8 @@ def similarDel(result, data):
 
             finalSet = finalSet.append(x.iloc[j])
 
-    for d in data.iloc[:, 14:data.shape[1]].columns:
-        # for d in data.iloc[:, 14:50].columns:
+    for d in data.iloc[:, 5:data.shape[1]].columns:
+        # for d in data.iloc[:, 5:50].columns:
         z = resultLt[(resultLt['col'] == d)]
         print("[" + datetime.datetime.today().strftime(
             "%Y-%m-%d %H:%M:%S") + "] condi : " + d)
@@ -162,7 +163,7 @@ def run(dataPath, resultCsvFileName):
     # data = data.iloc[:,1:50]
     result = pd.DataFrame()
 
-    for i in range(14, data.shape[1]):
+    for i in range(5, data.shape[1]):
         try:
             result = result.append(stepFunction(data.iloc[:, i], data.iloc[:, 4]))
         except Exception as e:
@@ -212,10 +213,10 @@ def checkDcnt(initData, cond, condDcnt, condDvsb):
     mod = sys.modules[__name__]
 
     if condDcnt > 0:
-        cond = cond[cond['dcnt'] > condDcnt]
+        cond = cond[cond['dcnt'] >= condDcnt]
 
     if condDvsb > 0:
-        cond = cond[cond['dvsb'] > condDvsb]
+        cond = cond[cond['dvsb'] >= condDvsb]
 
     cond = cond.sort_values(by='dvsb', ascending=False)
     cond = cond.reset_index(drop=True)
@@ -271,12 +272,12 @@ def run2(initData, cond, condDcnt, condDvsb, fileName):
 # R에서 inobuy1 <- inodel02 %>% filter( momp_arc7>=89) 데이터를 csv로 저장
 # write.csv(inobuy1, 'inobuy1_close_h4_9year.csv')
 # 실행할 부분을 선택한 후 shift + Enter 
-cond, data = run("C:/Users/Shine_anal/PycharmProjects/anlaysis/inobuyt5_d_close_h4_9year_202009.csv"               # 로딩할 Data 경로와 파일 명
-   ,"C:/Users/Shine_anal/PycharmProjects/anlaysis/inobuyt5_condi_h4_9year_{}.csv".format(datetime.datetime.today().strftime("%m%d%H%M"))) # 결과파일 저장할 경로와 파일 명
+cond, data = run("C:/Users/Shine_anal/Desktop/inott/allnew_adnl_d.csv"               # 로딩할 Data 경로와 파일 명
+   ,"C:/Users/Shine_anal/Desktop/inott/allnew_adnl_d_{}.csv".format(datetime.datetime.today().strftime("%m%d%H%M"))) # 결과파일 저장할 경로와 파일 명
 ######################################################################################################
 # 초기데이터, 조건들, dcnt, dvsb
 run2(data, cond, 1, 0.6, 
-     "C:/Users/Shine_anal/PycharmProjects/anlaysis/inobuyt5_close_h4_9year_final.csv")
+     "C:/Users/Shine_anal/Desktop/inott/kbuy2_com_allnew_final.csv")
 
 
 

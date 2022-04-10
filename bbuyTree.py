@@ -1,11 +1,12 @@
 # coding=utf-8
+from tkinter import E
 import pandas as pd
 import warnings
 import sys
 import datetime
 import os
 import pickle
-# COMMIT TEST
+
 warnings.filterwarnings('ignore')
 
 def makeFinalDf(data):
@@ -26,7 +27,7 @@ def makeFinalDf(data):
         step3 = tmpData.iloc[86]
         step4 = tmpData.iloc[87]
 
-        for i in range(0, 80):
+        for i in range(6, 74):
             if i % 2 == 0:
                 bcnt = tmpData.iloc[i]
             else:
@@ -599,36 +600,37 @@ def conditionMake(data, aggr_df, mode, leafType, lvl, condition, prevBcnt, prevD
     try:
         if leafType == 'A':
             # 이전 레벨 bcnt의 20% 이상이면서 bvsd가 가장 좋은 것
-            tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.2)].sort_values('bvsd', ascending=False)
+            tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.2) & (tmpFinal['bcnt']/tmpFinal['dcnt'] >= prevBcnt / prevDcnt * 1.2)].sort_values('bvsd', ascending=False)
         elif leafType == 'B':
             # 이전 레벨 dcnt의 70% 미만 & 이전레벨의 전체건수의 20% 이상 이면서 bvsd가 가장 좋은 것
-            tmpFinal = tmpFinal[(tmpFinal['dcnt'] < prevDcnt * 0.7) & (
+            tmpFinal = tmpFinal[(tmpFinal['dcnt'] < prevDcnt * 0.7) & (tmpFinal['bcnt']/tmpFinal['dcnt'] >= prevBcnt / prevDcnt * 1.2) & (
                         tmpFinal['bcnt'] + tmpFinal['dcnt'] > (prevBcnt + prevDcnt) * 0.2)].sort_values('bvsd',
                                                                                                         ascending=False)
         elif leafType == 'C':
             if lvl == 1 or lvl == 2:
-                # bvsd가 0.6 이상 1.8 이하이고 이전레벨의 dcnt건수 70% 미만인 것 중 dcnt가 가장 적은 것
-                tmpFinal = tmpFinal[((tmpFinal['bvsd'] >= 0.6) | (tmpFinal['bvsd'] <= 1.8)) & (
-                            tmpFinal['dcnt'] > prevDcnt * 0.4)].sort_values('dcnt')
+                # bvsd가 0.6 이상 1.8 이하이고 이전레벨의 dcnt건수 400% 초과인 것 중 dcnt가 가장 적은 것 ver1
+                # bcnt가 이전레벨의 bcnt 70%이상이면서 bcnt가 가장 많은 것 ver2
+                tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.6) & (tmpFinal['bcnt']/tmpFinal['dcnt'] >= prevBcnt / prevDcnt * 1.2)].sort_values('bcnt', ascending=False)
             else:
                 # 이전 레벨 bcnt의 60% 이상이면서 bvsd가 가장 좋은 것
-                tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.6)].sort_values('bvsd', ascending=False)
+                tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.7) & (tmpFinal['bcnt']/tmpFinal['dcnt'] >= prevBcnt / prevDcnt * 1.2)].sort_values('bvsd', ascending=False)
         elif leafType == 'D':
             if lvl == 1 or lvl == 2 or lvl == 3:
                 # 이전 레벨 bcnt의 40% 이상이면서 bvsd가 가장 좋은 것
-                tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.4)].sort_values('bvsd', ascending=False)
+                tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.3) & (tmpFinal['bcnt']/tmpFinal['dcnt'] >= prevBcnt / prevDcnt * 1.2)].sort_values('bvsd', ascending=False)
             else:
                 # bvsd가 0.6 이상 1.8 이하이고 이전레벨의 전체건수 20% 이상인 것 중 dcnt가 가장 적은 것
-                tmpFinal = tmpFinal[((tmpFinal['bvsd'] >= 0.6) | (tmpFinal['bvsd'] <= 1.8)) & (
+                tmpFinal = tmpFinal[((tmpFinal['bvsd'] >= 0.3) | (tmpFinal['bvsd'] <= 1.8)) & (tmpFinal['bcnt']/tmpFinal['dcnt'] >= prevBcnt / prevDcnt * 1.2) & (
                             tmpFinal['bcnt'] + tmpFinal['dcnt'] > (prevBcnt + prevDcnt) * 0.2)].sort_values('dcnt')
         elif leafType == 'E':
             if lvl == 1 or lvl == 2 or lvl == 3:
                 # bvsd가 0.6 이상 1.8 이하이고 이전레벨의 dcnt건수 50% 미만인 것 중 dcnt가 가장 많은 것
-                tmpFinal = tmpFinal[((tmpFinal['bvsd'] >= 0.6) | (tmpFinal['bvsd'] <= 1.8)) & (
-                            tmpFinal['dcnt'] < prevDcnt * 0.5)].sort_values('dcnt', ascending=False)
+                # tmpFinal = tmpFinal[((tmpFinal['bvsd'] >= 0.6) & (tmpFinal['bvsd'] <= 1.8)) & (
+                #             tmpFinal['dcnt'] < prevDcnt * 0.5)].sort_values('dcnt', ascending=False)
+                tmpFinal = tmpFinal[(tmpFinal['dcnt'] < prevDcnt * 0.9) & (tmpFinal['bcnt']/tmpFinal['dcnt'] >= prevBcnt / prevDcnt * 1.2)].sort_values('bcnt', ascending=False)
             else:
                 # 이전 레벨 bcnt의 60% 이상이면서 bvsd가 가장 좋은 것
-                tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.6)].sort_values('bvsd', ascending=False)
+                tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.6) & (tmpFinal['bcnt']/tmpFinal['dcnt'] >= prevBcnt / prevDcnt * 1.2)].sort_values('bvsd', ascending=False)
         else:
             tmpFinal = pd.DataFrame()
 
@@ -663,9 +665,6 @@ def conditionMake(data, aggr_df, mode, leafType, lvl, condition, prevBcnt, prevD
             if mode == 'del':
                 aggr_df = aggr_df[~tmpBool]
                 data = data[~tmpBool]
-            if mode == 'del':
-                aggr_df = aggr_df[~tmpBool]
-                data = data[~tmpBool]
             else:
                 aggr_df = aggr_df[tmpBool]
                 data = data[tmpBool]
@@ -681,8 +680,118 @@ def conditionMake(data, aggr_df, mode, leafType, lvl, condition, prevBcnt, prevD
     except Exception as e:
         tmpBool = pd.DataFrame()
         tmpRt = pd.DataFrame()
+        pass
+
+    print("lvl : " + str(lvl) + " / leafType : " + leafType + " / condition : " + condition)
 
     return data, aggr_df, tmpBool, tmpRt, condition, ratList
+
+def conditionMakeInit(data, aggr_df, mode, leafType, lvl, condition, prevBcnt, prevDcnt, ratDf, exceptCon):
+    # data = tmp[3]
+    # aggr_df = tmp[2]
+    # mode = 'buy'
+    # leafType = 'A'
+    # lvl = 1
+    # condition = tmp[4]
+    # ratDf = tmp[5]
+    tmpFinal = pd.DataFrame()
+
+    if exceptCon != '':
+        data = data.drop(exceptCon, axis=1)
+
+    if leafType == 'A' and len(data) > 0:
+        result = data.iloc[:, 8:data.shape[1] - 2].apply(lambda x: custom_func(x, aggr_df), axis=0)
+        # 각 조건 별 bcnt, dcnt, bvsd, dvsb
+        tmpFinal = makeFinalDf(result)
+        # for i in range(10, data.shape[1]):
+        #     tmpFinal = tmpFinal.append(custom_func2(data.iloc[:, i], data.iloc[:, 4]))
+
+        ratList = tmpFinal
+    else:
+        tmpFinal = ratDf
+        ratList = ratDf
+
+    try:
+        # if leafType == 'A':
+        #     # 이전 레벨 bcnt의 20% 이상이면서 bvsd가 가장 좋은 것
+        #     tmpFinal = tmpFinal[(tmpFinal['dcnt'] <= prevDcnt * 0.8)].sort_values('bcnt', ascending=False).iloc[0:]
+        # elif leafType == 'B':
+        #     tmpFinal = tmpFinal[(tmpFinal['dcnt'] <= prevDcnt * 0.8)].sort_values('bcnt', ascending=False).iloc[1:]
+        # elif leafType == 'C':
+        #     tmpFinal = tmpFinal[(tmpFinal['dcnt'] <= prevDcnt * 0.8)].sort_values('bcnt', ascending=False).iloc[2:]
+        # elif leafType == 'D':
+        #     tmpFinal = tmpFinal[(tmpFinal['dcnt'] <= prevDcnt * 0.8)].sort_values('bcnt', ascending=False).iloc[3:]
+        # elif leafType == 'E':
+        #     tmpFinal = tmpFinal[(tmpFinal['dcnt'] <= prevDcnt * 0.8)].sort_values('bcnt', ascending=False).iloc[4:]
+        # else:
+        #     tmpFinal = pd.DataFrame()
+        # if leafType == 'A':
+        #     # 이전 레벨 bcnt의 20% 이상이면서 bvsd가 가장 좋은 것
+        #     tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.9)].sort_values('bvsd', ascending=False)
+        # elif leafType == 'B':
+        #     tmpFinal = tmpFinal[(tmpFinal['dcnt'] < prevDcnt * 0.4)].sort_values('bcnt',ascending=False)
+        # elif leafType == 'C':
+        #     tmpFinal = tmpFinal[(tmpFinal['bcnt'] >= prevBcnt * 0.85)].sort_values('bvsd', ascending=False)
+        # elif leafType == 'D':
+        #     tmpFinal = tmpFinal[(tmpFinal['dcnt'] < prevDcnt * 0.6)].sort_values('bcnt',ascending=False)
+        # elif leafType == 'E':
+        #     tmpFinal = tmpFinal[(tmpFinal['dcnt'] < prevDcnt * 0.7)].sort_values('bcnt',ascending=False)
+        # else:
+        #     tmpFinal = pd.DataFrame()
+
+        if len(tmpFinal) > 0:
+            conH = tmpFinal.iloc[0]['condi']
+            valH = float(tmpFinal.iloc[0]['value'])
+            calH = tmpFinal.iloc[0]['cal']
+
+            if if_float(valH):
+                if calH == 'GT':
+                    tmpBool = data[conH] > valH
+                else:
+                    tmpBool = data[conH] <= valH
+            else:
+                if calH == 'GT':
+                    tmpBool = data[conH] > data[valH]
+                else:
+                    tmpBool = data[conH] <= data[valH]
+
+            if len(condition) == 0:
+                if calH == 'GT':
+                    condition = conH + ' > ' + str(valH)
+                else:
+                    condition = conH + ' <= ' + str(valH)
+            else:
+                if calH == 'GT':
+                    condition = condition + ' AND ' + conH + ' > ' + str(valH)
+                else:
+                    condition = condition + ' AND ' + conH + ' <= ' + str(valH)
+
+            # data[data['slow3D_fast5D'] <= -53]
+            if mode == 'del':
+                aggr_df = aggr_df[~tmpBool]
+                data = data[~tmpBool]
+            else:
+                aggr_df = aggr_df[tmpBool]
+                data = data[tmpBool]
+
+            tmpRt = tmpFinal.iloc[0]
+
+            # 선택된 컬럼 삭제
+            try:
+                for i in range(0, len(data.columns)):
+                    if conH[0:4] in data.columns[i]:
+                        data = data.drop(data.columns[i], axis=1)
+                        ratList = ratList[~(ratList['condi'] == data.columns[i])]
+            except Exception as e:
+                pass
+        else:
+            tmpBool = pd.DataFrame()
+            tmpRt = pd.DataFrame()
+    except Exception as e:
+        tmpBool = pd.DataFrame()
+        tmpRt = pd.DataFrame()
+
+    return data, aggr_df, tmpBool, tmpFinal, condition, ratList
 
 def drawCondiTree(data, level, limitCntRatio, initCondition, order, name):
     # level = 3
@@ -716,107 +825,116 @@ def drawCondiTree(data, level, limitCntRatio, initCondition, order, name):
                     tmpBool = pd.DataFrame()
                     tmpFinal = pd.DataFrame()
                     tmpCondition = ''
+                    tmpExptCon = pd.DataFrame([exceptCon], columns=['condi'])
 
                     prevBcnt = 0.8
                     prevDcnt = 0.8
                     tmp = pd.DataFrame()
                     ## Load pickle
-                    with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"  + name + "/lvl_{}_{}.pkl".format(i - 1,
-                                                                                                         j // branch + 1),
-                              "rb") as fr:
-                        tmp = pickle.load(fr)
+
+                    try:
+                        with open(
+                                "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + "/lvl_{}_{}.pkl".format(
+                                    i - 1,
+                                    j // branch + 1),
+                                "rb") as fr:
+                            tmp = pickle.load(fr)
+
+                        try:
+                            prevDcnt = tmp[3].iloc[:, 4].value_counts()[0]
+                        except Exception as e:
+                            prevDcnt = 0.8
+                            pass
+
+                        try:
+                            prevBcnt = tmp[3].iloc[:, 4].value_counts()[1]
+                        except Exception as e:
+                            prevBcnt = 0.8
+                            pass
+                    except Exception as e:
+                        tmp = pd.DataFrame()
+                        pass
                     # tmp = getattr(mod, 'lvl_{}_{}'.format(i - 1, j // branch + 1))
 
-                    try:
-                        prevDcnt = tmp[3].iloc[:, 4].value_counts()[0]
-                    except Exception as e:
-                        prevDcnt = 0.8
-                        pass
-
-                    try:
-                        prevBcnt = tmp[3].iloc[:, 4].value_counts()[1]
-                    except Exception as e:
-                        prevBcnt = 0.8
-                        pass
-
-                    print("[" + str(order) +"][" + datetime.datetime.today().strftime(
-                        "%Y-%m-%d %H:%M:%S") + "] Lvl_" + str(i) + "_" + str(j) + " / prevBcnt : " + str(
-                        prevBcnt) + " / prevDcnt : " + str(
-                        prevDcnt) + ' / sourceData : lvl_' + str(i - 1) + '_' + str(j // branch + 1))
-                    if prevBcnt > limitCnt:
-                        tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3], tmp[2],
-                                                                                                       mode, 'A', i,
-                                                                                                       tmp[4], prevBcnt,
-                                                                                                       prevDcnt, tmp[5],
-                                                                                                       '')
-                        tmpNxtRat = tmpRatList
+                    print("[" + str(order) + "][" + datetime.datetime.today().strftime(
+                        "%Y-%m-%d %H:%M:%S") + '] sourceData : lvl_' + str(
+                        i - 1) + '_' + str(j // branch + 1)
+                          + " / dvsb : " + str(round(prevDcnt / prevBcnt, 2))
+                          + " / bvsd : " + str(round(prevBcnt / prevDcnt, 2))
+                          + " / prevBcnt : "
+                          + str(prevBcnt) + " / prevDcnt : " + str(prevDcnt)
+                          )
+                    tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3], tmp[2],
+                                                                                                   mode, 'A', i,
+                                                                                                   tmp[4], prevBcnt,
+                                                                                                   prevDcnt, tmp[5],
+                                                                                                   tmpExptCon)
+                    tmpNxtRat = tmpRatList
                 elif j % branch == 2:
                     # tmp2 = getattr(mod, 'lvl_{}_{}'.format(i, j - 1))
-                    with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"  + name + "/lvl_{}_{}.pkl".format(i, j - 1),
-                              "rb") as fr:
-                        tmp2 = pickle.load(fr)
-                    if tmp2[0].shape[0] > 0:
-                        if prevBcnt > limitCnt:
-                            tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
-                                                                                                           tmp[2], mode,
-                                                                                                           'B', i,
-                                                                                                           tmp[4],
-                                                                                                           prevBcnt,
-                                                                                                           prevDcnt,
-                                                                                                           tmpNxtRat,
-                                                                                                           tmp2[
-                                                                                                               0].condi)
+                    # with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + "/lvl_{}_{}.pkl".format(i,
+                    #                                                                                                   j - 1),
+                    #           "rb") as fr:
+                    #     tmp2 = pickle.load(fr)
+                    tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
+                                                                                                   tmp[2], mode,
+                                                                                                   'B', i,
+                                                                                                   tmp[4],
+                                                                                                   prevBcnt,
+                                                                                                   prevDcnt,
+                                                                                                   tmpNxtRat,
+                                                                                                   tmpExptCon)
                 elif j % branch == 3:
                     # tmp2 = getattr(mod, 'lvl_{}_{}'.format(i, j - 1))
-                    with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"  + name + "/lvl_{}_{}.pkl".format(i, j - 1),
-                              "rb") as fr:
-                        tmp2 = pickle.load(fr)
-                    if tmp2[0].shape[0] > 0:
-                        if prevBcnt > limitCnt:
-                            tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
-                                                                                                           tmp[2], mode,
-                                                                                                           'C', i,
-                                                                                                           tmp[4],
-                                                                                                           prevBcnt,
-                                                                                                           prevDcnt,
-                                                                                                           tmpNxtRat,
-                                                                                                           tmp2[
-                                                                                                               0].condi)
+                    # with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + "/lvl_{}_{}.pkl".format(i,
+                    #                                                                                                   j - 1),
+                    #           "rb") as fr:
+                    #     tmp2 = pickle.load(fr)
+                    tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
+                                                                                                   tmp[2], mode,
+                                                                                                   'C', i,
+                                                                                                   tmp[4],
+                                                                                                   prevBcnt,
+                                                                                                   prevDcnt,
+                                                                                                   tmpNxtRat,
+                                                                                                   tmpExptCon)
                 elif j % branch == 4:
                     # tmp2 = getattr(mod, 'lvl_{}_{}'.format(i, j - 1))
-                    with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"  + name + "/lvl_{}_{}.pkl".format(i, j - 1),
-                              "rb") as fr:
-                        tmp2 = pickle.load(fr)
-                    if tmp2[0].shape[0] > 0:
-                        if prevBcnt > limitCnt:
-                            tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
-                                                                                                           tmp[2], mode,
-                                                                                                           'D', i,
-                                                                                                           tmp[4],
-                                                                                                           prevBcnt,
-                                                                                                           prevDcnt,
-                                                                                                           tmpNxtRat,
-                                                                                                           tmp2[
-                                                                                                               0].condi)
+                    # with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + "/lvl_{}_{}.pkl".format(i,
+                    #                                                                                                   j - 1),
+                    #           "rb") as fr:
+                    #     tmp2 = pickle.load(fr)
+                    tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
+                                                                                                   tmp[2], mode,
+                                                                                                   'D', i,
+                                                                                                   tmp[4],
+                                                                                                   prevBcnt,
+                                                                                                   prevDcnt,
+                                                                                                   tmpNxtRat,
+                                                                                                   tmpExptCon)
                 elif j % branch == 0:
                     # tmp2 = getattr(mod, 'lvl_{}_{}'.format(i, j - 1))
-                    with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"  + name + "/lvl_{}_{}.pkl".format(i, j - 1),
-                              "rb") as fr:
-                        tmp2 = pickle.load(fr)
-                    if tmp2[0].shape[0] > 0:
-                        if prevBcnt > limitCnt:
-                            tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
-                                                                                                           tmp[2], mode,
-                                                                                                           'E', i,
-                                                                                                           tmp[4],
-                                                                                                           prevBcnt,
-                                                                                                           prevDcnt,
-                                                                                                           tmpNxtRat,
-                                                                                                           tmp2[
-                                                                                                               0].condi)
+                    # with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + "/lvl_{}_{}.pkl".format(i,
+                    #                                                                                                   j - 1),
+                    #           "rb") as fr:
+                    #     tmp2 = pickle.load(fr)
+                    tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
+                                                                                                   tmp[2], mode,
+                                                                                                   'E', i,
+                                                                                                   tmp[4],
+                                                                                                   prevBcnt,
+                                                                                                   prevDcnt,
+                                                                                                   tmpNxtRat,
+                                                                                                   tmpExptCon)
 
                 # setattr(mod, 'lvl_{}_{}'.format(i, j), [tmpFinal, tmpBool, tmpAggrDf, tmpDat, tmpCondition, tmpRatList])
-                with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'  + name + '/lvl_{}_{}.pkl'.format(i, j), 'wb') as f:
+                # if prevBcnt > limitCnt:
+
+                if len(tmpFinal) > 0:
+                    tmpExptCon = tmpExptCon.append(pd.DataFrame([tmpFinal.condi], columns=['condi']))
+
+                with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + '/lvl_{}_{}.pkl'.format(i, j),
+                          'wb') as f:
                     pickle.dump([tmpFinal, tmpBool, tmpAggrDf, tmpDat, tmpCondition, tmpRatList], f)
 
                 if j % branch != 1:
@@ -834,13 +952,16 @@ def drawCondiTree(data, level, limitCntRatio, initCondition, order, name):
                     dcnt = 0.8
                     pass
 
-                print("[" + str(order) +"][" + datetime.datetime.today().strftime(
-                    "%Y-%m-%d %H:%M:%S") + "] Lvl_" + str(i) + "_" + str(j) + " / bcnt : " + str(bcnt) + " / dcnt : " + str(dcnt) + " / condition : " + tmpCondition  )
+                print("[" + str(order) + "][" + datetime.datetime.today().strftime(
+                    "%Y-%m-%d %H:%M:%S") + "] Lvl_" + str(i) + "_" + str(j) + " / bcnt : " + str(
+                    bcnt) + " / dcnt : " + str(dcnt) + " / dvsb : " + str(round(dcnt / bcnt, 2)) + " / bvsd : " + str(
+                    round(bcnt / dcnt, 2)) + " / condition : " + tmpCondition)
 
                 try:
                     fResultT = fResultT.append(
-                        pd.DataFrame([('lvl_' + str(i) + '_' + str(j), tmpCondition, bcnt, dcnt, bcnt / dcnt)],
-                                     columns=['lvl', 'condi', 'bcnt', 'dcnt', 'bvsd']))
+                        pd.DataFrame(
+                            [('lvl_' + str(i) + '_' + str(j), tmpCondition, bcnt, dcnt, bcnt / dcnt, dcnt / bcnt)],
+                            columns=['lvl', 'condi', 'bcnt', 'dcnt', 'bvsd', 'dvsb']))
                 except Exception as e:
                     pass
 
@@ -884,141 +1005,107 @@ def drawCondiTree(data, level, limitCntRatio, initCondition, order, name):
 
 def drawCondiInitTree(path, level, limitCntRatio, additionalCond, name):
     data = pd.read_csv(path)
+
+    # data2 = data
+    # data2.value_counts('pur_gubn5')
+    # data = data.iloc[0:10000,]
     branch = 5
     mode = 'buy'
     mod = sys.modules[__name__]
     fResultT = pd.DataFrame()
     tmpBoolSumm = pd.DataFrame()
     finalReturn = pd.DataFrame()
-
+    # data = data.iloc[1:1000,]
     createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name)
     removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name)
-    for h in range(0, 3):
-        if tmpBoolSumm.shape[0] > 0:
-            data = data[~tmpBoolSumm]
 
-        for i in range(0, 2):
-            leaf = branch ** i
-            if i == 0:
-                setattr(mod, 'lvl_0_1', ['', '', data.iloc[:, 4], data, '', ''])
+    tmpNxtRat = pd.DataFrame()
+    tmpRatList = pd.DataFrame()
+    tmpDat = pd.DataFrame()
+    tmpAggrDf = pd.DataFrame()
+    tmpBool = pd.DataFrame()
+    tmpFinal = pd.DataFrame()
+    tmpCondition = ''
+
+    prevBcnt = 0.8
+    prevDcnt = 0.8
+    tmp = pd.DataFrame()
+    ## Load pickle
+    tmp = ['', '', data.iloc[:, 4], data, '', '']
+
+    try:
+        prevDcnt = tmp[3].iloc[:, 4].value_counts()[0]
+    except Exception as e:
+        prevDcnt = 0.8
+        pass
+
+    try:
+        prevBcnt = tmp[3].iloc[:, 4].value_counts()[1]
+    except Exception as e:
+        prevBcnt = 0.8
+        pass
+
+    print("[" + datetime.datetime.today().strftime(
+        "%Y-%m-%d %H:%M:%S") + "] initCondition Create : / Bcnt : " + str(
+        prevBcnt) + " / Dcnt : " + str(prevDcnt))
+    tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMakeInit(tmp[3], tmp[2],
+                                                                                       mode, 'A', 1,
+                                                                                       tmp[4], prevBcnt,
+                                                                                       prevDcnt, tmp[5],
+                                                                                       '')
+    # ttmpRatList = tmpRatList
+    # fResultT = pd.DataFrame()
+    # tmpRatList = ttmpRatList
+    tmpRatList = tmpRatList[
+        (tmpRatList['dcnt'] < prevDcnt * 0.8) & (tmpRatList['bcnt'] > prevBcnt * 0.8)].sort_values('bvsd',
+                                                                                                   ascending=False)
+
+    chkDupCondi = 0
+    chkLoopEnd = 0
+
+    for h in range(0, tmpRatList.shape[0]):
+        if chkLoopEnd < 16:
+            if h == 0:
+                fResultT = fResultT.append(tmpRatList.iloc[h])
+                chkLoopEnd = chkLoopEnd + 1
             else:
-                for j in range(1, leaf + 1):
-                    if j % branch == 1:
-                        tmpNxtRat = pd.DataFrame()
-                        tmpRatList = pd.DataFrame()
-                        tmpDat = pd.DataFrame()
-                        tmpAggrDf = pd.DataFrame()
-                        tmpBool = pd.DataFrame()
-                        tmpFinal = pd.DataFrame()
-                        tmpCondition = ''
+                for r in range(0, fResultT.shape[0]):
+                    if fResultT.iloc[r].condi == tmpRatList.iloc[h].condi:
+                        chkDupCondi = chkDupCondi + 1
 
-                        prevBcnt = 0.8
-                        prevDcnt = 0.8
-                        tmp = pd.DataFrame()
-                        ## Load pickle
-                        tmp = getattr(mod, 'lvl_{}_{}'.format(i - 1, j // branch + 1))
+                if chkDupCondi == 0:
+                    fResultT = fResultT.append(tmpRatList.iloc[h])
+                    chkLoopEnd = chkLoopEnd + 1
+        else:
+            break
 
-                        try:
-                            prevDcnt = tmp[3].iloc[:, 4].value_counts()[0]
-                        except Exception as e:
-                            prevDcnt = 0.8
-                            pass
+        chkDupCondi = 0
 
-                        try:
-                            prevBcnt = tmp[3].iloc[:, 4].value_counts()[1]
-                        except Exception as e:
-                            prevBcnt = 0.8
-                            pass
-
-                        print("[" + datetime.datetime.today().strftime(
-                            "%Y-%m-%d %H:%M:%S") + "] initCondition Create : " + str(i) + "_" + str(j) + " / Bcnt : " + str(
-                            prevBcnt) + " / Dcnt : " + str(prevDcnt))
-                        tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3], tmp[2],
-                                                                                                       mode, 'A', i,
-                                                                                                       tmp[4], prevBcnt,
-                                                                                                       prevDcnt, tmp[5],
-                                                                                                       '')
-                        tmpNxtRat = tmpRatList
-                    elif j % branch == 2:
-                        tmp2 = getattr(mod, 'lvl_{}_{}'.format(i, j - 1))
-                        if tmp2[0].shape[0] > 0:
-                            tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
-                                                                                                           tmp[2], mode,
-                                                                                                           'B', i,
-                                                                                                           tmp[4],
-                                                                                                           prevBcnt,
-                                                                                                           prevDcnt,
-                                                                                                           tmpNxtRat,
-                                                                                                           tmp2[
-                                                                                                               0].condi)
-                    elif j % branch == 3:
-                        tmp2 = getattr(mod, 'lvl_{}_{}'.format(i, j - 1))
-                        if tmp2[0].shape[0] > 0:
-                            tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
-                                                                                                           tmp[2], mode,
-                                                                                                           'C', i,
-                                                                                                           tmp[4],
-                                                                                                           prevBcnt,
-                                                                                                           prevDcnt,
-                                                                                                           tmpNxtRat,
-                                                                                                           tmp2[
-                                                                                                               0].condi)
-                    elif j % branch == 4:
-                        tmp2 = getattr(mod, 'lvl_{}_{}'.format(i, j - 1))
-                        if tmp2[0].shape[0] > 0:
-                            tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
-                                                                                                           tmp[2], mode,
-                                                                                                           'D', i,
-                                                                                                           tmp[4],
-                                                                                                           prevBcnt,
-                                                                                                           prevDcnt,
-                                                                                                           tmpNxtRat,
-                                                                                                           tmp2[
-                                                                                                               0].condi)
-                    elif j % branch == 0:
-                        tmp2 = getattr(mod, 'lvl_{}_{}'.format(i, j - 1))
-                        if tmp2[0].shape[0] > 0:
-                            tmpDat, tmpAggrDf, tmpBool, tmpFinal, tmpCondition, tmpRatList = conditionMake(tmp[3],
-                                                                                                           tmp[2], mode,
-                                                                                                           'E', i,
-                                                                                                           tmp[4],
-                                                                                                           prevBcnt,
-                                                                                                           prevDcnt,
-                                                                                                           tmpNxtRat,
-                                                                                                           tmp2[
-                                                                                                               0].condi)
-
-                    setattr(mod, 'lvl_{}_{}'.format(i, j), [tmpFinal, tmpBool, tmpAggrDf, tmpDat, tmpCondition, tmpRatList])
-
-                    tmpFinal['condition'] = tmpCondition
-                    fResultT = fResultT.append(tmpFinal)
-
-                    if j % branch == 0:
-                        tmpBoolSumm = getattr(mod, 'lvl_1_1')[1] \
-                                    | getattr(mod, 'lvl_1_2')[1] \
-                                    | getattr(mod, 'lvl_1_3')[1] \
-                                    | getattr(mod, 'lvl_1_4')[1] \
-                                    | getattr(mod, 'lvl_1_5')[1]
-
-    del data
 
     # 초기조건 15개를 순차적으로 대입하여 전개
     # for w in range(11, 15):
-    # # for w in range(11, fResultT.shape[0]):
-    #     data = pd.DataFrame()
-    #     data = pd.read_csv(path)
 
-    #     conH = fResultT.iloc[w]['condi']
-    #     valH = fResultT.iloc[w]['value']
-    #     calH = fResultT.iloc[w]['cal']
+    for w in range(0, fResultT.shape[0]):
+        # if w == 0:
+        #     data = pd.DataFrame()
+        #     data = pd.read_csv(path)
 
-    #     if calH == 'GT':
-    #         tmpData = data[data[conH] > float(valH)]
-    #     else:
-    #         tmpData = data[data[conH] <= float(valH)]
+        conH = fResultT.iloc[w]['condi']
+        valH = fResultT.iloc[w]['value']
+        calH = fResultT.iloc[w]['cal']
 
-    #     finalReturn = finalReturn.append(drawCondiTree(tmpData, level, limitCntRatio, fResultT.iloc[w]['condition'], w, name))
-    #     finalReturn.to_csv(path + "_result_" + str(w) + ".csv")
+        if calH == 'GT':
+            tmpData = data[data[conH] > float(valH)]
+            tmpCondition = conH + ' > ' + str(valH)
+        else:
+            tmpData = data[data[conH] <= float(valH)]
+            tmpCondition = conH + ' <= ' + str(valH)
+
+        # # 2021.12.14 초기조건 15개 컬럼 제외하기
+        # data = exceptColumn(data, fResultT['condition'])
+
+        finalReturn = finalReturn.append(drawCondiTree(tmpData, level, limitCntRatio, tmpCondition, w, name))
+        finalReturn.to_csv(path + "_result_" + str(w) + ".csv")
 
     if len(additionalCond) > 0:
         condition = pd.DataFrame(additionalCond.split(','))
@@ -1072,7 +1159,8 @@ def drawCondiInitTree(path, level, limitCntRatio, additionalCond, name):
                     val = str(val).replace(' ', '')
                     tmpData = data[data[con] > data[val]]
                     pass
-
+            # level = 5
+            # limitCntRatio = 0.05
             finalReturn = finalReturn.append(drawCondiTree(tmpData, level, limitCntRatio, fResultT.iloc[w]['condition'], 'add_' + str(x), name))
             finalReturn.to_csv(path + "_result_add_" + str(w) + ".csv")
 
@@ -1111,13 +1199,16 @@ def checkCondition(data, condition):
     return print(data.value_counts('pur_gubn5'))
 
 def exceptColumn(data, expCondi):
-    for i in range(0, expCondi.shape[0]):
-        if expCondi.iloc[i].find('>') > 0:
-            expCol = expCondi.iloc[i].split('>')[0].replace(' ', '')
-        else:
-            expCol = expCondi.iloc[i].split('<=')[0].replace(' ', '')
+    try:
+        for i in range(0, expCondi.shape[0]):
+            if expCondi.iloc[i].find('>') > 0:
+                expCol = expCondi.iloc[i].split('>')[0].replace(' ', '')
+            else:
+                expCol = expCondi.iloc[i].split('<=')[0].replace(' ', '')
 
-        data = data.drop(expCol, axis=1)
+            data = data.drop(expCol, axis=1)
+    except Exception as e:
+        pass
 
     return data
 
@@ -1134,14 +1225,14 @@ def createFolder(directory):
         print ('Error: Creating directory. ' +  directory)
         pass
 
-name = 'inodeltt'
+name = 'allnewbuy'
 
 # Data Loading
-path = "C:/Users/Shine_anal/PycharmProjects/anlaysis/inodeltt_newcolm_close_h4_9year_202009.csv"
-additionalCond = 'momp_sig_ang1>=6,low_5bd_high_rate<=-22'
+path = "C:/Users/Shine_anal/Desktop/inott/allnew_low_adnl_d_com.csv"
+additionalCond = ''      ##'momp_sig_ang1>=6,low_5bd_high_rate<=-22'
 
 # function Exec
-fResult = drawCondiInitTree(path, 5, 0.2, additionalCond, name)
+fResult = drawCondiInitTree(path, 5, 0.05, additionalCond, name)    # 0.05 -> initial buy cnt
 # fResult.to_csv("C:/Users/Shine_anal/Desktop/inodeltt_newcolm_close_h4_9year_202009_new_result.csv")
 
 # 결과 합치기
