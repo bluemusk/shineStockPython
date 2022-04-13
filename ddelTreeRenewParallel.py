@@ -842,7 +842,7 @@ def chkEndBranch(condi, data):
 
     return chkEnd
 
-def makeFinalSet(path, name):
+def makeFinalSet(path, name, lastRatio):
     # 결과 합치기
     fResultMid = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
     # fResultMid = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULT/ncbuy3_result_original_2.csv")
@@ -879,7 +879,7 @@ def makeFinalSet(path, name):
             fResultMid['chk'].iloc[g] = 1
 
     fResultFin = fResultMid[fResultMid['chk'] == 0]
-
+    fResultFin = fResultFin[fResultFin['dvsb'] >= lastRatio]
     fResultFin = fResultFin.sort_values('dvsb', ascending=False)  # dvsb가 좋은 순서로 정렬
     fResultFin.to_csv(path + name + "_ddelTreeRenewParallel_result.csv")
 
@@ -890,6 +890,8 @@ def makeFinalSet(path, name):
 if __name__ == '__main__':
     #####################################################################################################
     # 파라미터 세팅   초기 조건 만들지 안고 계속 20개 가지 치기
+    # 해당 가지에서 조건 추출 후 컬럼 삭제
+    # 세팅한 레벨, 세팅한 -1 레벨에서 11개 조건 완료 후 세팅한 비율조건 + 2보다 큰 녀석 찾는 로직 (2번 수행)
     #####################################################################################################
     name = 'sjtabuy'  # 사용자 지정 명
     path = "C:/Users/Shine_anal/Desktop/inott/"  # 사용자 지정명 + _com.csv 파일이 존재하는 폴더 (분석할 csv파일)
@@ -998,7 +1000,7 @@ if __name__ == '__main__':
                     pass
 
     realFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
-    fResultMid = makeFinalSet(path, name)
+    fResultMid = makeFinalSet(path, name, paramLastRatio)
     ray.shutdown()
     #####################################################################################################
     # 최종결과파일명   사용자 지정 이름_allnew_ddelTreeNew_result.csv
