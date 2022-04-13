@@ -15,6 +15,18 @@ import numpy as np
 # Engine.put("ray")  # Modin will use Ray
 
 @ray.remote
+def chkEndBranch(condi, data):
+    chkEnd = 0
+    for h in range(0, data.shape[0]):
+        try:
+            if condi in data.iloc[h]['condi']:
+                chkEnd = chkEnd + 1
+        except Exception as e:
+            print(e)
+            pass
+
+    return chkEnd
+
 def makeFinalSet(path, name):
     # 결과 합치기
     # fResultMid = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
@@ -25,23 +37,31 @@ def makeFinalSet(path, name):
     fResultMid = fResultMid.iloc[:, 1:fResultMid.shape[1]].drop_duplicates()
 
     fResultMid = fResultMid.sort_values('condi')  # dvsb가 좋은 순서로 정렬
-    fResultMid['chk'] = 0
     fResultMid = fResultMid.dropna(axis=0)
+    fResultMid['chk'] = 0
 
-
-    for g in range(0, fResultMid.shape[0 ] -1):
+    # fResultMid = fResultMid[1:100]
+    for g in range(0, fResultMid.shape[0] - 1):
         try:
             print(str(g) + ' - ' + fResultMid.iloc[g]['condi'])
         except:
             pass
 
-        for h in range( g +1, fResultMid.shape[0]):
-            try:
-                if fResultMid.iloc[g]['condi'] in fResultMid.iloc[h]['condi']:
-                    fResultMid['chk'].iloc[g] = 1
-            except Exception as e:
-                print(e)
-                pass
+        try:
+            fResultMid_split = np.array_split(fResultMid.iloc[g+1:], 20, axis=0)
+        except:
+            print('split error')
+            pass
+
+        tmp = [chkEndBranch.remote(fResultMid.iloc[g]['condi'], x) for x in fResultMid_split]
+
+        last = ray.get(tmp)[0] + ray.get(tmp)[1] + ray.get(tmp)[2] + ray.get(tmp)[3] + ray.get(tmp)[4] + ray.get(tmp)[5]\
+               + ray.get(tmp)[6] + ray.get(tmp)[7] + ray.get(tmp)[8] + ray.get(tmp)[9] + ray.get(tmp)[10] + ray.get(tmp)[11]\
+               + ray.get(tmp)[12] + ray.get(tmp)[13] + ray.get(tmp)[14] + ray.get(tmp)[15] + ray.get(tmp)[16] + ray.get(tmp)[17]\
+               + ray.get(tmp)[18] + ray.get(tmp)[19]
+
+        if last > 0:
+            fResultMid['chk'].iloc[g] = 1
 
     fResultFin = fResultMid[fResultMid['chk'] == 0]
 
@@ -63,5 +83,5 @@ if __name__ == '__main__':
     paramLastRatio = 0.7  # 마지막 레벨에서 dvsb가 x:1 이상인 것만 돌리게 하는 조건
     #####################################################################################################
     ray.init(num_cpus=20, log_to_driver=False)
-    makeFinalSet(path, name)
+    kk = makeFinalSet(path, name)
     ray.shutdown()
