@@ -566,10 +566,9 @@ def splitData(data, aggr_df):
 
     return tmpFinal
 
-#@profile
 def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum, lastLimitRatio,
                   limitCnt):
-    # data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum = tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, branch, name, i, j
+    # data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum = tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, 11, name, i, j
     tmpFinal = pd.DataFrame()
 
     exceptCon = pd.DataFrame()
@@ -601,11 +600,7 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
             except:
                 pass
 
-    notData = data
-    notAggr = aggr_df
-
     for u in range(branch * (lvlNum - 1) + 1, branch * lvlNum + 1):
-        tmpFinal = splitData(notData, notAggr)
         try:
             # u=1
             tmpExec = pd.DataFrame()
@@ -616,7 +611,9 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
             tmpAggr = pd.DataFrame()
             tmpData = pd.DataFrame()
 
-            if u % branch == 1 and len(tmpFinal) > 0:
+            if u % branch == 1:
+                tmpFinal = splitData(data, aggr_df)
+
                 # lvl <= 2 일때 dcnt가 40%이상 감소 한것 중 dvsb가 가장 큰거
                 # 나머지 레벨에서는 dvsb가 가장 큰거
                 if lvl <= 2:
@@ -627,17 +624,17 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                     ].sort_values('dvsb', ascending=False).iloc[0]
 
-            elif u % branch == 2 and len(tmpFinal) > 0:
+            elif u % branch == 2:
                 # 이전 레벨 전체건수 20% 이상 dvsb가 가장 좋은 것
                 tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.2)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('dvsb', ascending=False).iloc[0]
-            elif u % branch == 3 and len(tmpFinal) > 0:
+            elif u % branch == 3:
                 # 이전 레벨 전체건수 20% 이상 rrr이 가장 좋은 것
                 tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.2)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('rrr', ascending=False).iloc[0]
-            elif u % branch == 4 and len(tmpFinal) > 0:
+            elif u % branch == 4:
                 # 이전 레벨 dvsb 보다 크면서 bcnt가 가장 적은 것
                 #  ( lvl <= 2 일때 전체건수 30%이상 인것 중에서)
                 if lvl < 2:
@@ -647,33 +644,33 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 else:
                     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                     ].sort_values('bcnt').iloc[0]
-            elif u % branch == 5 and len(tmpFinal) > 0:
+            elif u % branch == 5:
                 # 이전 레벨 bcnt 40%이상 감소, 이전 dvsb보다 향상, dcnt가 가장 많은 것
                 tmpExec = tmpFinal[(tmpFinal['bcnt'] <= prevBcnt * 0.6)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('dcnt', ascending=False).iloc[0]
-            elif u % branch == 6 and len(tmpFinal) > 0:
+            elif u % branch == 6:
                 # bcnt가 이전 레벨 전체건수 25% 이하 dcnt가 가장 많은 것
                 tmpExec = tmpFinal[(tmpFinal['bcnt'] <= (prevBcnt + prevDcnt) * 0.25)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('dcnt', ascending=False).iloc[0]
-            elif u % branch == 7 and len(tmpFinal) > 0:
+            elif u % branch == 7:
                 # 이전 레벨 전체건수 30% 이상, dvsb가 가장 좋은 것
                 tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] > (prevBcnt + prevDcnt) * 0.3)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('dvsb', ascending=False).iloc[0]
-            elif u % branch == 8 and len(tmpFinal) > 0:
+            elif u % branch == 8:
                 # rRt상위 60% 중에서 dcnt가 가장 많은 것
                 tmpExec = tmpFinal[(tmpFinal['rRt'] > tmpFinal['rRt'].median())
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('dcnt', ascending=False).iloc[0]
-            elif u % branch == 9 and len(tmpFinal) > 0:
+            elif u % branch == 9:
                 # rRt가 이전레벨 dvsb보다 크면 sRt가 가장 큰것
                 # 아니면 rRat > 20 인 것 중에 rRt가 가장 큰것
                 tmpExec = tmpFinal[(tmpFinal['rRat'] >= 20)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('rRt', ascending=False).iloc[0]
-            elif u % branch == 10 and len(tmpFinal) > 0:
+            elif u % branch == 10:
                 # lvl <= 2 rRat >= 30
                 # 이면서 sRt가 가장 큰것
                 if lvl <= 2:
@@ -683,7 +680,7 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 else:
                     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                        ].sort_values('sRt', ascending=False).iloc[0]
-            elif u % branch == 0 and len(tmpFinal) > 0:
+            elif u % branch == 0:
                 # lvl <= 2 rRat >= 30
                 # 이면서 rRt가 가장 큰것
                 if lvl <= 2:
@@ -723,8 +720,7 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
 
                 tmpAggr = aggr_df[tmpBool]
                 tmpData = data[tmpBool]
-                notData = notData[~tmpBool]
-                notAggr = aggr_df[~tmpBool]
+
                 print("[" + datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
                       + '] lvl'
                       + str(lvl) + "_" + str(u)
@@ -739,8 +735,8 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 except:
                     pass
 
-                if (lvl < limitLvl - 1 and tmpExec['dcnt'] > limitCnt) or (
-                        lvl == limitLvl - 1 and tmpExec['dvsb'] > lastLimitRatio and tmpExec['dcnt'] > limitCnt):
+                if (lvl < limitLvl - 1 and tmpExec['dcnt'] >= limitCnt) or (
+                        lvl == limitLvl - 1 and tmpExec['dvsb'] >= lastLimitRatio and tmpExec['dcnt'] >= limitCnt):
                     print('lvl_{}_{}.pkl'.format(lvl, u) + ' pickle file create')
                     with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
                               + name + 'ReNew'
@@ -774,6 +770,232 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                              columns=['lvl', 'condi', 'bcnt', 'dcnt', 'bvsd', 'dvsb']))
             pass
 
+    return fResultT
+
+#@profile
+def conditionMakeNotin(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum, lastLimitRatio,
+                  limitCnt):
+    # data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum = tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, branch, name, i, j
+    tmpFinal = pd.DataFrame()
+
+    exceptCon = pd.DataFrame()
+    fResultT = pd.DataFrame()
+
+    # initCondition = 'momp_ang3 > -4.7 AND formula_arc_day5 > 0.0 AND dis60_ang3 > -4.8 AND momp_sig_ang1_momp5_sig4_ang1 > 4.8 AND roc_arc1 <= -82.5 AND m14_slow3k_ang1_m14_slow3k_ang2 > 0.1'
+    if len(initCondition) > 0:
+        exCon = pd.DataFrame()
+        conds = initCondition.split(' AND ')
+        for x in conds:
+            tmp = ''
+            if x.find('>') > 0:
+                try:
+                    tmp = x.split(' > ')[0]
+                except:
+                    print('conditionMakeNotin-1')
+                    pass
+
+            else:
+                try:
+                    tmp = x.split(' <= ')[0]
+                except:
+                    print('conditionMakeNotin-2')
+                    pass
+
+            tmp = tmp.replace(' ', '')
+
+            # print(tmp)
+            try:
+                data = data.drop(tmp, axis=1)
+            except:
+                print('conditionMakeNotin-3')
+                pass
+
+    notData = data
+    notAggr = aggr_df
+
+    for u in range(branch * (lvlNum - 1) + 1, branch * lvlNum + 1):
+        try:
+            initBcnt = notData['pur_gubn5'].value_counts()[1]
+            initDcnt = notData['pur_gubn5'].value_counts()[0]
+
+            tmpFinal = splitData(notData, notAggr)
+        except Exception as e:
+            fResultT = fResultT.append(
+                pd.DataFrame([('lvl_' + str(lvl) + '_' + str(u), '', '0',
+                               '0', '0', '0')],
+                             columns=['lvl', 'condi', 'bcnt', 'dcnt', 'bvsd', 'dvsb']))
+            pass
+        try:
+            # u=2
+            tmpExec = pd.DataFrame()
+            conH = ''
+            valH = ''
+            calH = ''
+            tmpBool = pd.DataFrame()
+            tmpAggr = pd.DataFrame()
+            tmpData = pd.DataFrame()
+
+            if u % branch == 1 and len(tmpFinal) > 0:
+                # lvl <= 2 일때 dcnt가 40%이상 감소 한것 중 dvsb가 가장 큰거
+                # 나머지 레벨에서는 dvsb가 가장 큰거
+                if lvl <= 2:
+                    tmpExec = tmpFinal[(tmpFinal['dcnt'] <= initDcnt * 0.6)
+                                     & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                    ].sort_values('dcnt', ascending=False).iloc[0]
+                else:
+                    tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                    ].sort_values('dvsb', ascending=False).iloc[0]
+
+            elif u % branch == 2 and len(tmpFinal) > 0:
+                # 이전 레벨 전체건수 20% 이상 dvsb가 가장 좋은 것
+                tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (initBcnt + initDcnt) * 0.2)
+                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                   ].sort_values('dvsb', ascending=False).iloc[0]
+            elif u % branch == 3 and len(tmpFinal) > 0:
+                # 이전 레벨 전체건수 20% 이상 rrr이 가장 좋은 것
+                tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (initBcnt + initDcnt) * 0.2)
+                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                   ].sort_values('rrr', ascending=False).iloc[0]
+            elif u % branch == 4 and len(tmpFinal) > 0:
+                # 이전 레벨 dvsb 보다 크면서 bcnt가 가장 적은 것
+                #  ( lvl <= 2 일때 전체건수 30%이상 인것 중에서)
+                if lvl < 2:
+                    tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (initBcnt + initDcnt) * 0.3)
+                                      & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                       ].sort_values('bcnt').iloc[0]
+                else:
+                    tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                    ].sort_values('bcnt').iloc[0]
+            elif u % branch == 5 and len(tmpFinal) > 0:
+                # 이전 레벨 bcnt 40%이상 감소, 이전 dvsb보다 향상, dcnt가 가장 많은 것
+                tmpExec = tmpFinal[(tmpFinal['bcnt'] <= initBcnt * 0.6)
+                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                   ].sort_values('dcnt', ascending=False).iloc[0]
+            elif u % branch == 6 and len(tmpFinal) > 0:
+                # bcnt가 이전 레벨 전체건수 25% 이하 dcnt가 가장 많은 것
+                tmpExec = tmpFinal[(tmpFinal['bcnt'] <= (initBcnt + initDcnt) * 0.25)
+                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                   ].sort_values('dcnt', ascending=False).iloc[0]
+            elif u % branch == 7 and len(tmpFinal) > 0:
+                # 이전 레벨 전체건수 30% 이상, dvsb가 가장 좋은 것
+                tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] > (initBcnt + initDcnt) * 0.3)
+                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                   ].sort_values('dvsb', ascending=False).iloc[0]
+            elif u % branch == 8 and len(tmpFinal) > 0:
+                # rRt상위 60% 중에서 dcnt가 가장 많은 것
+                tmpExec = tmpFinal[(tmpFinal['rRt'] > tmpFinal['rRt'].median())
+                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                   ].sort_values('dcnt', ascending=False).iloc[0]
+            elif u % branch == 9 and len(tmpFinal) > 0:
+                # rRt가 이전레벨 dvsb보다 크면 sRt가 가장 큰것
+                # 아니면 rRat > 20 인 것 중에 rRt가 가장 큰것
+                tmpExec = tmpFinal[(tmpFinal['rRat'] >= 20)
+                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                   ].sort_values('rRt', ascending=False).iloc[0]
+            elif u % branch == 10 and len(tmpFinal) > 0:
+                # lvl <= 2 rRat >= 30
+                # 이면서 sRt가 가장 큰것
+                if lvl <= 2:
+                    tmpExec = tmpFinal[(tmpFinal['rRat'] >= 30)
+                                       & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
+                else:
+                    tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                       ].sort_values('sRt', ascending=False).iloc[0]
+            elif u % branch == 0 and len(tmpFinal) > 0:
+                # lvl <= 2 rRat >= 30
+                # 이면서 rRt가 가장 큰것
+                if lvl <= 2:
+                    tmpExec = tmpFinal[(tmpFinal['rRat'] >= 30)
+                                       & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                       ].sort_values('rRt', ascending=False).iloc[0]
+                else:
+                    tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > initDcnt / initBcnt * 1.2)
+                                       ].sort_values('rRt', ascending=False).iloc[0]
+
+            if len(tmpExec) > 0:
+                conH = tmpExec['condi']
+                valH = float(tmpExec['value'])
+                calH = tmpExec['cal']
+
+                if if_float(valH):
+                    if calH == 'GT':
+                        tmpBool = data[conH] > valH
+                    else:
+                        tmpBool = data[conH] <= valH
+                else:
+                    if calH == 'GT':
+                        tmpBool = data[conH] > data[valH]
+                    else:
+                        tmpBool = data[conH] <= data[valH]
+
+                if len(initCondition) == 0:
+                    if calH == 'GT':
+                        condition = conH + ' > ' + str(valH)
+                    else:
+                        condition = conH + ' <= ' + str(valH)
+                else:
+                    if calH == 'GT':
+                        condition = initCondition + ' AND ' + conH + ' > ' + str(valH)
+                    else:
+                        condition = initCondition + ' AND ' + conH + ' <= ' + str(valH)
+
+                tmpAggr = aggr_df[tmpBool]
+                tmpData = data[tmpBool]
+                notData = notData[~tmpBool]
+                notAggr = notAggr[~tmpBool]
+                print("[" + datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+                      + '] lvl'
+                      + str(lvl) + "_" + str(u)
+                      + "\ndvsb : " + str(round(tmpExec['dvsb'], 2))
+                      + " / bcnt : " + str(int(tmpExec['bcnt']))
+                      + " / dcnt : " + str(int(tmpExec['dcnt']))
+                      + " / condition : " + condition)
+
+                # 선택된 컬럼 삭제
+                try:
+                    tmpFinal = tmpFinal[~(tmpFinal['condi'] == conH)]
+                except:
+                    print('conditionMakeNotin-4')
+                    pass
+
+                if (lvl < limitLvl - 1 and tmpExec['dcnt'] > limitCnt) or (
+                        lvl == limitLvl - 1 and tmpExec['dvsb'] > lastLimitRatio and tmpExec['dcnt'] > limitCnt):
+                    print('lvl_{}_{}.pkl'.format(lvl, u) + ' pickle file create')
+                    with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
+                              + name + 'ReNew'
+                              + '/lvl_{}_{}.pkl'.format(lvl, u)
+                            , 'wb') as f:
+                        pickle.dump([tmpFinal, tmpBool, tmpAggr, tmpData, condition], f)
+
+                try:
+                    fResultT = fResultT.append(
+                        pd.DataFrame([('lvl_' + str(lvl) + '_' + str(u), condition, str(int(tmpExec['bcnt'])),
+                                       str(int(tmpExec['dcnt'])), tmpExec['bcnt'] / tmpExec['dcnt'],
+                                       tmpExec['dcnt'] / tmpExec['bcnt'])],
+                                     columns=['lvl', 'condi', 'bcnt', 'dcnt', 'bvsd', 'dvsb']))
+
+                    # if u % branch == 0:
+                    #     for p in range(0, tmpExec.shape[0]):
+                    #         if tmpExec.iloc[p]['dvsb'] > lastLimitRatio + 2:
+                    #             fResultT = fResultT.append(pd.DataFrame([('lvl_' + str(lvl) + '_' + str(u) + 'extra_' + str(p), condition, str(int(tmpExec.iloc[p]['bcnt'])),
+                    #                            str(int(tmpExec.iloc[p]['dcnt'])), tmpExec.iloc[p]['bcnt'] / tmpExec.iloc[p]['dcnt'],
+                    #                            tmpExec.iloc[p]['dcnt'] / tmpExec.iloc[p]['bcnt'])],
+                    #                          columns=['lvl', 'condi', 'bcnt', 'dcnt', 'bvsd', 'dvsb']))
+
+
+                except Exception as e:
+                    print('conditionMakeNotin-5')
+                    print(e)
+                    pass
+        except Exception as e:
+            print('conditionMakeNotin-6')
+            print(e)
+            fResultT = fResultT.append(
+                pd.DataFrame([('lvl_' + str(lvl) + '_' + str(u), '', '0',
+                               '0', '0', '0')],
+                             columns=['lvl', 'condi', 'bcnt', 'dcnt', 'bvsd', 'dvsb']))
+            pass
     return fResultT
 
 def checkCondition(data, condition):
@@ -887,7 +1109,7 @@ def makeFinalSet(path, name, lastRatio):
     fResultFin = fResultMid[fResultMid['chk'] == 0]
     fResultFin = fResultFin[fResultFin['dvsb'] >= lastRatio]
     fResultFin = fResultFin.sort_values('dvsb', ascending=False)  # dvsb가 좋은 순서로 정렬
-    fResultFin.to_csv(path + name + "_ddelTreeRenewParallel_result.csv")
+    fResultFin.to_csv(path + name + "_ddelTreeRenewNotInParallel_result.csv")
 
     os.remove("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
 
@@ -901,12 +1123,20 @@ if __name__ == '__main__':
     #####################################################################################################
     name = 'sjtabuy'  # 사용자 지정 명
     path = "C:/Users/Shine_anal/Desktop/inott/"  # 사용자 지정명 + _com.csv 파일이 존재하는 폴더 (분석할 csv파일)
-    paramLevel = 3  # 돌릴LEVEL수
-    paramLimitRatio = 1  # 초기데이터 중 dcnt대비 x% 이상의 가지만 돌리게 하는 조건 (%)
-    paramLastRatio = 0.7  # 마지막 레벨에서 dvsb가 x:1 이상인 것만 돌리게 하는 조건
+    paramLevel = 5  # 돌릴LEVEL수
+    paramLimitRatio = 0.3  # 초기데이터 중 dcnt대비 x% 이상의 가지만 돌리게 하는 조건 (%)
+    paramLastRatio = 2.5  # 마지막 레벨에서 dvsb가 x:1 이상인 것만 돌리게 하는 조건
     #####################################################################################################
+    # import pandas as pd
+    # data = pd.read_csv(path + name +'_com.csv')
+    # data[(data['vhf_ang1_1bd'] > 0.1)
+# & (data['sar_arc3'] > 89.6)
+# & (data['vo_sig_ang3_1bd'] > 2.0)
+# & (data['high7_low7_rate_ang'] > 304.7)
+# & (data['fast5D_ang1_fast10D_ang2'] > 2.1)
+#     ].value_counts('pur_gubn5')
 
-    # function Exec
+# function Exec
     # fResult = drawCondiInitTree(path, paramLevel, paramLimitRatio, name, paramLastRatio)
     # fResultMid = makeFinalSet(path, name)
     createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
@@ -957,52 +1187,66 @@ if __name__ == '__main__':
                         # tmp = getattr(mod, 'lvl_{}_{}'.format(i - 1, j))
                 except Exception as e:
                     tmp = pd.DataFrame()
-                    # print(e)
+                    print(e)
+                    print('error 0')
                     pass
 
                 try:
                     prevDcnt = tmp[3]['pur_gubn5'].value_counts()[0]
+                except Exception as e:
+                    prevDcnt = 0.8
+                    print('error 0.5')
+                    pass
 
-                    try:
-                        prevBcnt = tmp[3]['pur_gubn5'].value_counts()[1]
-                    except Exception as e:
-                        prevBcnt = 0.8
-                        pass
+                try:
+                    prevBcnt = tmp[3]['pur_gubn5'].value_counts()[1]
+                except Exception as e:
+                    prevBcnt = 0.8
+                    print('error 1')
+                    pass
 
-                    print("[" + datetime.datetime.today().strftime(
-                        "%Y-%m-%d %H:%M:%S") + '] sourceData : lvl_' + str(i - 1) + '_' + str(j)
-                          + " / dvsb : " + str(round(prevDcnt / prevBcnt * 1.2, 2))
-                          + " / bvsd : " + str(round(prevBcnt / prevDcnt, 2))
-                          + " / prevBcnt : "
-                          + str(prevBcnt) + " / prevDcnt : " + str(prevDcnt)
-                          )
-                    # print('i : ' + str(i) + ' / prevDcnt : ' + str(prevDcnt) + ' / limitCnt : ' + str(limitCnt))
-                    if (i < paramLevel and prevDcnt > limitCnt) or (
-                            i == paramLevel and prevDcnt / prevBcnt * 1.2 > paramLastRatio and prevDcnt > limitCnt):
-                        # print('here!!!')
-                        # tmpFF = ray.get(conditionMake.remote(tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, branch, name, paramLevel, j,
-                        #                       paramLastRatio, limitCnt))
+                print("[" + datetime.datetime.today().strftime(
+                    "%Y-%m-%d %H:%M:%S") + '] sourceData : lvl_' + str(i - 1) + '_' + str(j)
+                      + " / dvsb : " + str(round(prevDcnt / prevBcnt * 1.2, 2))
+                      + " / bvsd : " + str(round(prevBcnt / prevDcnt, 2))
+                      + " / prevBcnt : "
+                      + str(prevBcnt) + " / prevDcnt : " + str(prevDcnt)
+                      )
+                # print('i : ' + str(i) + ' / prevDcnt : ' + str(prevDcnt) + ' / limitCnt : ' + str(limitCnt))
+
+                if (i < paramLevel and prevDcnt > limitCnt) or (
+                        i == paramLevel and prevDcnt / prevBcnt > paramLastRatio and prevDcnt > limitCnt):
+                    # print('here!!!')
+                    # tmpFF = ray.get(conditionMake.remote(tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, branch, name, paramLevel, j,
+                    #                       paramLastRatio, limitCnt))
+                    if i <= paramLevel - 1:
                         tmpFF = conditionMake(tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, branch, name,
                                               paramLevel, j,
                                               paramLastRatio, limitCnt)
-                        realFinal = realFinal.append(tmpFF)
+                    else:
+                        tmpFF = conditionMakeNotin(tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, branch, name,
+                                              paramLevel, j,
+                                              paramLastRatio, limitCnt)
 
-                    try:
-                        if i > 1:
-                            print('delete pickle - lvl_{}_{}.pkl'.format(i - 1, j))
-                            if os.path.isfile(
-                                    'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'ReNew' + '/lvl_{}_{}.pkl'.format(
-                                        i - 1, j)):
-                                os.remove(
-                                    'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'ReNew' + '/lvl_{}_{}.pkl'.format(
-                                        i - 1, j))
-                    except Exception as e:
-                        # print(e)
-                        pass
+                    realFinal = realFinal.append(tmpFF)
+                    print(realFinal)
 
+                    if j == leaf:
+                        realFinal.to_csv(
+                            "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + '_' + str(i) +"_result.csv")
+                    # print(realFinal)
+                try:
+                    if i > 1:
+                        print('delete pickle - lvl_{}_{}.pkl'.format(i - 1, j))
+                        if os.path.isfile(
+                                'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'ReNew' + '/lvl_{}_{}.pkl'.format(
+                                    i - 1, j)):
+                            os.remove(
+                                'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'ReNew' + '/lvl_{}_{}.pkl'.format(
+                                    i - 1, j))
                 except Exception as e:
-                    prevDcnt = 0.8
-                    # print(e)
+                    print(e)
+                    print('error 2')
                     pass
 
     realFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
@@ -1011,6 +1255,6 @@ if __name__ == '__main__':
     #####################################################################################################
     # 최종결과파일명   사용자 지정 이름_allnew_ddelTreeNew_result.csv
     print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-    print('최종결과파일은 ' + path + name + '_ddelTreeRenewParallel_result.csv  입니다.')
+    print('최종결과파일은 ' + path + name + '_ddelTreeRenewNotInParallel_result.csv  입니다.')
     print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
     #####################################################################################################
