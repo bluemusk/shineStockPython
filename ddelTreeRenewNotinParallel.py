@@ -1074,7 +1074,8 @@ def makeFinalSet(path, name, lastRatio):
     # 결과 합치기
     fResultMid = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
     # fResultMid = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULT/ncbuy3_result_original_2.csv")
-
+    fResultMid = fResultMid[fResultMid['dvsb'] >= lastRatio]
+    fResultMid = fResultMid.reset_index()
     tmpL = fResultMid['condi'].drop_duplicates()  # 중복조건 제거
     fResultMid = fResultMid.iloc[tmpL.index]
     fResultMid = fResultMid.iloc[:, 1:fResultMid.shape[1]].drop_duplicates()
@@ -1117,9 +1118,9 @@ def makeFinalSet(path, name, lastRatio):
 
 if __name__ == '__main__':
     #####################################################################################################
-    # 파라미터 세팅   초기 조건 만들지 안고 계속 20개 가지 치기
+    # 파라미터 세팅   초기 조건 만들지 안고 계속 11개 가지 치기
     # 해당 가지에서 조건 추출 후 컬럼 삭제
-    #
+    # paramLevel에서 세팅한 레벨 -2 까지 원래 로직으로 그 후에는 not in 로직으로 실행
     #####################################################################################################
     name = 'sjtabuy'  # 사용자 지정 명
     path = "C:/Users/Shine_anal/Desktop/inott/"  # 사용자 지정명 + _com.csv 파일이 존재하는 폴더 (분석할 csv파일)
@@ -1229,7 +1230,7 @@ if __name__ == '__main__':
                                               paramLastRatio, limitCnt)
 
                     realFinal = realFinal.append(tmpFF)
-                    print(realFinal)
+                    # print(realFinal)
 
                     if j == leaf:
                         realFinal.to_csv(
