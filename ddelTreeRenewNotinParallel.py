@@ -1128,7 +1128,7 @@ if __name__ == '__main__':
     name = 'sjtabuy'  # 사용자 지정 명
     path = "C:/Users/Shine_anal/Desktop/inott/"  # 사용자 지정명 + _com.csv 파일이 존재하는 폴더 (분석할 csv파일)
     paramLevel = 5  # 돌릴LEVEL수
-    paramLimitRatio = 0.3  # 초기데이터 중 dcnt대비 x% 이상의 가지만 돌리게 하는 조건 (%)
+    paramLimitCnt = 30  # dcnt paramLimitCnt 이상의 가지만 돌리게 하는 조건
     paramLastRatio = 2.5  # 마지막 레벨에서 dvsb가 x:1 이상인 것만 돌리게 하는 조건
     #####################################################################################################
     # import pandas as pd
@@ -1141,7 +1141,7 @@ if __name__ == '__main__':
 #     ].value_counts('pur_gubn5')
 
 # function Exec
-    # fResult = drawCondiInitTree(path, paramLevel, paramLimitRatio, name, paramLastRatio)
+    # fResult = drawCondiInitTree(path, paramLevel, paramLimitCnt, name, paramLastRatio)
     # fResultMid = makeFinalSet(path, name)
     createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
     removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
@@ -1153,7 +1153,7 @@ if __name__ == '__main__':
 
     initBcnt = data['pur_gubn5'].value_counts()[1]
     initDcnt = data['pur_gubn5'].value_counts()[0]
-    limitCnt = initDcnt * paramLimitRatio * 0.01
+    limitCnt = paramLimitCnt
     realFinal = pd.DataFrame()
     tmpFF = pd.DataFrame()
     print('limitCnt : ' + str(limitCnt))
