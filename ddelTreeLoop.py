@@ -1118,6 +1118,8 @@ if __name__ == '__main__':
     branch = 11
 
     data = pd.read_csv(path + name + '_com.csv')
+    initData = pd.read_csv(path + name + '_com_11years.csv')
+
     # data = pd.read_csv(path + 'sjtabuy_com1.csv')
     initBcnt = data['pur_gubn5'].value_counts()[1]
     initDcnt = data['pur_gubn5'].value_counts()[0]
@@ -1257,11 +1259,19 @@ if __name__ == '__main__':
 
         tmpLoopFinal = tmpLoopFinal.append(lastFinal)
 
-        # lastFinal = pd.read_csv(
-        #     "C:/Users/Shine_anal/Desktop/inott/sjtabuy_ddelTreeLoop_result1.csv")
+        lastFinal['rDcnt'] = 0
+        lastFinal['rBcnt'] = 0
+        lastFinal['rDvsb'] = 0
 
-        # loop 돌기 전 입력한 비율 값 보다 큰 dcnt & bcnt가 0인 조건을 만족하는 data만 빼낸다.
-        lastFinal = lastFinal[(lastFinal['dcnt'] >= limitCnt) & (lastFinal['bcnt'] < 1)]
+        # _com 데이터에서 만들어낸 조건들을 11year 데이터에 대입해본다.
+        for m in range(0, len(lastFinal)):
+            lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = checkCondition(initData, lastFinal.iloc[m]['condi'])
+            lastFinal['rDcnt'].iloc[m] = lvdcnt
+            lastFinal['rBcnt'].iloc[m] = lvbcnt
+            lastFinal['rDvsb'].iloc[m] = lvdvsb
+
+        # loop 돌기 전 입력한 비율 값 보다 큰 rDcnt & rBcnt가 0인 조건을 만족하는 data만 빼낸다.
+        lastFinal = lastFinal[(lastFinal['rDcnt'] >= limitCnt) & (lastFinal['rBcnt'] < 1)]
 
         for z in range(0, len(lastFinal)):
             try:
