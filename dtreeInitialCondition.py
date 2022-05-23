@@ -593,103 +593,108 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
             tmpData = pd.DataFrame()
 
             if u % branch == 1:
-                # data 20 split
                 tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt)
 
-                # dvsb가 가장 큰거
-                tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                ].sort_values('dvsb', ascending=False).iloc[0]
+                # lvl <= 2 일때 dcnt가 40%이상 감소 한것 중 dvsb가 가장 큰거
+                # 나머지 레벨에서는 dvsb가 가장 큰거
+                if lvl <= 2:
+                    tmpExec = tmpFinal[(tmpFinal['dcnt'] <= prevDcnt * 0.6)
+                                       & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.1)
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
+                else:
+                    tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
+                    ].sort_values('dvsb', ascending=False).iloc[0]
 
             elif u % branch == 2:
-                # dvsb가 두번째로 좋은 것
-                tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                ].sort_values('dvsb', ascending=False).iloc[1]
-            elif u % branch == 3:
                 # 이전 레벨 전체건수 20% 이상 dvsb가 가장 좋은 것
                 tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.2)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('dvsb', ascending=False).iloc[0]
+            elif u % branch == 3:
+                tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.7)
+                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.1)
+                                   ].sort_values('dcnt', ascending=False).iloc[0]
+            # elif u % branch == 4:
+            #     # 이전 레벨 전체건수 20% 이상 rrr이 가장 좋은 것
+            #     tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.2)
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.1)
+            #                        ].sort_values('rrr', ascending=False).iloc[0]
+            # elif u % branch == 5:
+            #     # 이전 레벨 전체건수 20% 이상 bcnt가 가장 적은 것
+            #     tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.2)
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.1)
+            #                        ].sort_values('bcnt').iloc[0]
+            # elif u % branch == 6:
+            #     # 이전 레벨 dvsb 보다 크면서 bcnt가 가장 적은 것
+            #     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #     ].sort_values('bcnt').iloc[0]
+            # elif u % branch == 7:
+            #     # 이전 레벨 dvsb 보다 크면서 dcnt가 가장 많은 것
+            #     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #     ].sort_values('dcnt', ascending=False).iloc[0]
+            # elif u % branch == 8:
+            #     # 이전 레벨 dvsb 보다 크면서 dcnt가 두번째로 많은 것
+            #     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #     ].sort_values('dcnt', ascending=False).iloc[1]
+            # elif u % branch == 9:
+            #     # bcnt가 이전 레벨 전체건수 25% 이하 dcnt가 가장 많은 것
+            #     tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] <= (prevBcnt + prevDcnt) * 0.25)
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                        ].sort_values('dcnt', ascending=False).iloc[0]
+            # elif u % branch == 10:
+            #     # 이전 레벨 전체건수 40% 이상 dvsb가 가장 좋은 것
+            #     tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.4)
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                        ].sort_values('dvsb', ascending=False).iloc[0]
+            # elif u % branch == 11:
+            #     # 이전 레벨 전체건수 40% 이상 dvsb가 두번째로 좋은 것
+            #     tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.4)
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                        ].sort_values('dcnt', ascending=False).iloc[1]
+            # elif u % branch == 12:
+            #     # 이전 레벨 bcnt 40%이상 감소, 이전 dvsb보다 향상, dcnt가 가장 많은 것
+            #     tmpExec = tmpFinal[(tmpFinal['bcnt'] <= prevBcnt * 0.6)
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                        ].sort_values('dcnt', ascending=False).iloc[1]
+            # elif u % branch == 13:
+            #     # 이전 레벨 bcnt 40%이상 감소, 이전 dvsb보다 향상, dcnt가 가장 많은 것
+            #     tmpExec = tmpFinal[(tmpFinal['bcnt'] <= prevBcnt * 0.6)
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                        ].sort_values('dvsb', ascending=False).iloc[1]
+            # elif u % branch == 14:
+            #     # rRt상위 60% 중에서 dcnt가 가장 많은 것
+            #     tmpExec = tmpFinal[(tmpFinal['rRt'] > tmpFinal['rRt'].median())
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                        ].sort_values('dcnt', ascending=False).iloc[0]
+            # elif u % branch == 15:
+            #     # rRat >= 35 인 것 중에 rRt가 가장 큰것
+            #     tmpExec = tmpFinal[(tmpFinal['rRat'] >= 35)
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                        ].sort_values('rRt', ascending=False).iloc[0]
+            # elif u % branch == 16:
+            #     # rRat >= 40 인 것 중에 rRt가 가장 큰것
+            #     tmpExec = tmpFinal[(tmpFinal['rRat'] >= 40)
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                        ].sort_values('sRt', ascending=False).iloc[0]
+            # elif u % branch == 17:
+            #     # rRt가 이전레벨 dvsb보다 크면 sRt가 가장 큰것
+            #     # 아니면 rRat > 20 인 것 중에 rRt가 가장 큰것
+            #     tmpExec = tmpFinal[(tmpFinal['rRat'] >= 20)
+            #                        & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                        ].sort_values('rRt', ascending=False).iloc[0]
+            # elif u % branch == 18:
+            #     # lvl <= 3 rRat >= 35
+            #     # lvl <=6  rRat >= 25
+            #     # 이면서 rRt가 가장 큰것
+            #     if lvl <= 3:
+            #         tmpExec = tmpFinal[(tmpFinal['rRat'] >= 35)
+            #                            & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                            ].sort_values('rRt', ascending=False).iloc[0]
+            #     else:
+            #         tmpExec = tmpFinal[(tmpFinal['rRat'] >= 25)
+            #                            & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
+            #                            ].sort_values('rRt', ascending=False).iloc[0]
             elif u % branch == 4:
-                # 이전 레벨 전체건수 20% 이상 rrr이 가장 좋은 것
-                tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.2)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('rrr', ascending=False).iloc[0]
-            elif u % branch == 5:
-                # 이전 레벨 전체건수 20% 이상 bcnt가 가장 적은 것
-                tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.2)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('bcnt').iloc[0]
-            elif u % branch == 6:
-                # 이전 레벨 dvsb 보다 크면서 bcnt가 가장 적은 것
-                tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                ].sort_values('bcnt').iloc[0]
-            elif u % branch == 7:
-                # 이전 레벨 dvsb 보다 크면서 dcnt가 가장 많은 것
-                tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                ].sort_values('dcnt', ascending=False).iloc[0]
-            elif u % branch == 8:
-                # 이전 레벨 dvsb 보다 크면서 dcnt가 두번째로 많은 것
-                tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                ].sort_values('dcnt', ascending=False).iloc[1]
-            elif u % branch == 9:
-                # bcnt가 이전 레벨 전체건수 25% 이하 dcnt가 가장 많은 것
-                tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] <= (prevBcnt + prevDcnt) * 0.25)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('dcnt', ascending=False).iloc[0]
-            elif u % branch == 10:
-                # 이전 레벨 전체건수 40% 이상 dvsb가 가장 좋은 것
-                tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.4)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('dvsb', ascending=False).iloc[0]
-            elif u % branch == 11:
-                # 이전 레벨 전체건수 40% 이상 dvsb가 두번째로 좋은 것
-                tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.4)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('dcnt', ascending=False).iloc[1]
-            elif u % branch == 12:
-                # 이전 레벨 bcnt 40%이상 감소, 이전 dvsb보다 향상, dcnt가 가장 많은 것
-                tmpExec = tmpFinal[(tmpFinal['bcnt'] <= prevBcnt * 0.6)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('dcnt', ascending=False).iloc[1]
-            elif u % branch == 13:
-                # 이전 레벨 bcnt 40%이상 감소, 이전 dvsb보다 향상, dcnt가 가장 많은 것
-                tmpExec = tmpFinal[(tmpFinal['bcnt'] <= prevBcnt * 0.6)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('dvsb', ascending=False).iloc[1]
-            elif u % branch == 14:
-                # rRt상위 60% 중에서 dcnt가 가장 많은 것
-                tmpExec = tmpFinal[(tmpFinal['rRt'] > tmpFinal['rRt'].median())
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('dcnt', ascending=False).iloc[0]
-            elif u % branch == 15:
-                # rRat >= 35 인 것 중에 rRt가 가장 큰것
-                tmpExec = tmpFinal[(tmpFinal['rRat'] >= 35)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('rRt', ascending=False).iloc[0]
-            elif u % branch == 16:
-                # rRat >= 40 인 것 중에 rRt가 가장 큰것
-                tmpExec = tmpFinal[(tmpFinal['rRat'] >= 40)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('sRt', ascending=False).iloc[0]
-            elif u % branch == 17:
-                # rRt가 이전레벨 dvsb보다 크면 sRt가 가장 큰것
-                # 아니면 rRat > 20 인 것 중에 rRt가 가장 큰것
-                tmpExec = tmpFinal[(tmpFinal['rRat'] >= 20)
-                                   & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                   ].sort_values('rRt', ascending=False).iloc[0]
-            elif u % branch == 18:
-                # lvl <= 3 rRat >= 35
-                # lvl <=6  rRat >= 25
-                # 이면서 rRt가 가장 큰것
-                if lvl <= 3:
-                    tmpExec = tmpFinal[(tmpFinal['rRat'] >= 35)
-                                       & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                       ].sort_values('rRt', ascending=False).iloc[0]
-                else:
-                    tmpExec = tmpFinal[(tmpFinal['rRat'] >= 25)
-                                       & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt)
-                                       ].sort_values('rRt', ascending=False).iloc[0]
-            elif u % branch == 19:
                 # lvl <= 2 rRat >= 40
                 # lvl <=6  rRat >= 30
                 # 이면서 sRt가 가장 큰것
@@ -903,12 +908,12 @@ def makeFinalSet(path, name):
             fResultMid['chk'].iloc[g] = 1
 
     fResultFin = fResultMid[fResultMid['chk'] == 0]
-    # fResultFin = fResultFin[fResultFin['dvsb'] >= lastRatio]
+    fResultFin = fResultFin[fResultFin['dvsb'] >= lastRatio]
     fResultFin = fResultFin.sort_values('dvsb', ascending=False)  # dvsb가 좋은 순서로 정렬
 
-    fResultMid.to_csv(path + name + "_dtreeInitialCondition_result.csv")
+    fResultFin.to_csv(path + name + "_dtreeInitialCondition_result.csv")
 
-    return fResultMid
+    return fResultFin
 
 if __name__ == '__main__':
     #####################################################################################################
@@ -940,19 +945,20 @@ if __name__ == '__main__':
     print('limitCnt : ' + str(limitCnt))
     mod = sys.modules[__name__]
 
-    # cond1 close_low3d_rate <= 33.0
-    # cond2 vr_ang3_1bd > 121.4
-    # cond3 vr_ang1 <= 338.3
-    # cond4 stdbal_cl_ang1_stdbal_es_ang1 <= -230.0
-    # 
-    # initData['pur_gubn5'].value_counts()
-    # 
-    # initData[(initData['close_low3d_rate'] <= 33)]['pur_gubn5'].value_counts()
-    # initData[(initData['vr_ang3_1bd'] > 121.4)]['pur_gubn5'].value_counts()
-    # initData[(initData['vr_ang1'] <= 338.3)]['pur_gubn5'].value_counts()
-    # initData[(initData['stdbal_cl_ang1_stdbal_es_ang1'] <= -230.0)]['pur_gubn5'].value_counts()
-    # 
-    # initData[~((initData['close_low3d_rate'] <= 33) | (initData['vr_ang3_1bd'] > 121.4) | (initData['vr_ang1'] <= 338.3) | (initData['stdbal_cl_ang1_stdbal_es_ang1'] <= -230.0))]['pur_gubn5'].value_counts()
+    # aratio > 77.25
+    # close_low3d_rate <= 24.5
+    # rsi_ang3 <= 4.8
+    # mfi_ang2 > 3.9
+    # cci_ang1_cci_sig_ang2 > 274.4
+    # stdbal_bl__stdbal_es <= -0.1
+    #
+    # initData[((initData['aratio'] > 77.25)
+    #           & (initData['close_low3d_rate'] <= 24.5)
+    #           & (initData['rsi_ang3'] <= 4.8)
+    #           & (initData['mfi_ang2'] > 3.9)
+    #           & (initData['cci_ang1_cci_sig_ang2'] > 274.4)
+    #           & (initData['stdbal_bl__stdbal_es'] <= -0.1)
+    #           )]['pur_gubn5'].value_counts()
 
     # 2022.05.03 initial Condition Find - 4 condition * 5 times
     # u,y = 1,0
@@ -994,10 +1000,16 @@ if __name__ == '__main__':
                     #                     & (dfRatio['dcnt'] + dfRatio['bcnt'] >= (loopData['pur_gubn5'].value_counts()[1] + loopData['pur_gubn5'].value_counts()[0]) * 0.9)
                     #                     ].sort_values('rRt', ascending=False).iloc[0]
 
-                    tmpExec = dfRatio[(dfRatio['dcnt'] >= 30)
-                                    & (dfRatio['dcnt'] <= 50)
-                                    & (dfRatio['dcnt'] >= limitCnt)
-                                     ].sort_values('dvsb', ascending=False).iloc[0]
+                    if y * 5 + u - 1 < 5:
+                        tmpExec = dfRatio[(dfRatio['dcnt'] >= 100)
+                                          & (dfRatio['dcnt'] <= 300)
+                                          & (dfRatio['dcnt'] >= limitCnt)
+                                          ].sort_values('dvsb', ascending=False).iloc[0]
+                    else:
+                        tmpExec = dfRatio[(dfRatio['dcnt'] >= 30)
+                                        & (dfRatio['dcnt'] <= 50)
+                                        & (dfRatio['dcnt'] >= limitCnt)
+                                         ].sort_values('dvsb', ascending=False).iloc[0]
 
                     conH = tmpExec['condi']
                     valH = float(tmpExec['value'])
@@ -1019,9 +1031,9 @@ if __name__ == '__main__':
                             tmpBool = loopData[conH] <= loopData[valH]
 
                     if calH == 'GT':
-                        condition = conH + ' > ' + str(valH)
-                    else:
                         condition = conH + ' <= ' + str(valH)
+                    else:
+                        condition = conH + ' > ' + str(valH)
 
                     setattr(mod, 'cond' + str(y * 5 + u), condition)
 
@@ -1040,10 +1052,14 @@ if __name__ == '__main__':
                 print(e)
                 pass
 
-    for x in range(1, 26):
+    for x in range(1, 27):
         branch = 5
-        data = getattr(mod, 'datO{}'.format(str(x)))
-        initCond = getattr(mod, 'cond{}'.format(str(x)))
+        if x == 26:
+            data = initData
+            initCond = ''
+        else:
+            data = getattr(mod, 'datO{}'.format(str(x)))
+            initCond = getattr(mod, 'cond{}'.format(str(x)))
         # i,j = 1,1
         for i in range(0, paramLevel + 1):
             if i == 0:
