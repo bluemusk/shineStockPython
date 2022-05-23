@@ -641,6 +641,7 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
 
                 firstBcnt = tmpExec.bcnt
                 firstDcnt = tmpExec.dcnt
+                firstCnt = 0
                 print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
             elif u % branch == 2:
                 # lvl <= 2 일때 dcnt가 40%이상 감소 한것 중 dvsb가 가장 큰거
@@ -714,8 +715,14 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                        ].sort_values('rRt', ascending=False).iloc[0]
 
+            # original - 14:3  / 1 - 12:0  / etc - 14:1
             if lastYn == 'Y':
-                if firstDcnt / firstBcnt > tmpExec.dvsb:
+                if (firstDcnt / firstBcnt <= tmpExec.dvsb):
+                    pass
+                elif tmpExec.dvsb > prevDcnt / prevBcnt and tmpExec.dcnt > firstDcnt and firstCnt == 0:
+                    firstCnt = firstCnt + 1
+                    pass
+                else:
                     tmpExec = pd.DataFrame()
 
             if len(tmpExec) > 0:
@@ -924,7 +931,8 @@ def makeFinalSet(path, name, lastRatio):
     fResultFin = fResultMid[fResultMid['chk'] == 0]
     fResultFin = fResultFin[fResultFin['dvsb'] >= lastRatio]
     fResultFin = fResultFin.sort_values('dvsb', ascending=False)  # dvsb가 좋은 순서로 정렬
-    fResultFin.to_csv(path + name + "_ddelTreeLoop_result.csv")
+    fResultFin.to_csv(path + name + "_ddelTreeLoop_result_{}.csv".format(datetime.datetime.today().strftime(
+                        "%Y%m%d%H%M%S")))
 
     # os.remove("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
 
@@ -1103,13 +1111,14 @@ if __name__ == '__main__':
     # paramLimitCnt = 7  # 초기데이터 중 dcnt대비 x개 이상의 가지만 돌리게 하는 조건
     paramLimitRatio = 0.7 # 초기데이터 중 dcnt대비 곱하기 x 개 이상의 가지만 돌리게 하는 조건 (퍼센트 임!!)
     paramLastRatio = 2  # 마지막 레벨에서 dvsb가 x:1 이상인 것만 돌리게 하는 조건
-    paramLoop = 1  # loop Count Setting
+    paramLoop = 3  # loop Count Setting
     #####################################################################################################
     ray.init(num_cpus=20, log_to_driver=False)
+    # 5 - 13s - 45% / 10 - 8s - 74% / 15 - 8s - 72 ~ 90% / 20 - 5s - 78 ~ 100%
     branch = 11
 
     data = pd.read_csv(path + name + '_com.csv')
-
+    # data = pd.read_csv(path + 'sjtabuy_com1.csv')
     initBcnt = data['pur_gubn5'].value_counts()[1]
     initDcnt = data['pur_gubn5'].value_counts()[0]
     limitCnt = initDcnt * paramLimitRatio * 0.01
@@ -1248,8 +1257,11 @@ if __name__ == '__main__':
 
         tmpLoopFinal = tmpLoopFinal.append(lastFinal)
 
+        # lastFinal = pd.read_csv(
+        #     "C:/Users/Shine_anal/Desktop/inott/sjtabuy_ddelTreeLoop_result1.csv")
+
         # loop 돌기 전 입력한 비율 값 보다 큰 dcnt & bcnt가 0인 조건을 만족하는 data만 빼낸다.
-        lastFinal = lastFinal[(lastFinal['dcnt'] >= limitCnt) and (lastFinal['bcnt'] < 0)]
+        lastFinal = lastFinal[(lastFinal['dcnt'] >= limitCnt) & (lastFinal['bcnt'] < 1)]
 
         for z in range(0, len(lastFinal)):
             try:
@@ -1258,7 +1270,7 @@ if __name__ == '__main__':
             except:
                 pass
 
-        # tt = lastFinal[(lastFinal['dcnt'] == 14) & (lastFinal['bcnt'] > 0)]
+        # data.value_counts('pur_gubn5')
     tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
     fResultMid = makeFinalSet(path, name, paramLastRatio)
     ray.shutdown()
