@@ -883,7 +883,7 @@ def chkEndBranch(condi, data):
 
     return chkEnd
 
-def makeFinalSet(path, name, lastRatio):
+def makeFinalSet(path, name, lastRatio, realInitData):
     # 결과 합치기
     lists = os.listdir("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/")
 
@@ -927,6 +927,14 @@ def makeFinalSet(path, name, lastRatio):
 
         if last > 0:
             fResultMid['chk'].iloc[g] = 1
+
+    #최종 100%데이터에 넣어서 비율을 다시 구한다.
+    for m in range(0, len(fResultMid)):
+        lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = checkCondition(realInitData, fResultMid.iloc[m]['condi'])
+        fResultMid['dcnt'].iloc[m] = lvdcnt
+        fResultMid['bcnt'].iloc[m] = lvbcnt
+        fResultMid['dvsb'].iloc[m] = lvdvsb
+
 
     fResultFin = fResultMid[fResultMid['chk'] == 0]
     fResultFin = fResultFin[fResultFin['dvsb'] >= lastRatio]
@@ -1060,7 +1068,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
                         '######################################################################################################################################')
                     print("[" + str(vLoop) + "][" + datetime.datetime.today().strftime(
                         "%Y-%m-%d %H:%M:%S") + '] sourceData : lvl_' + str(i - 1) + '_' + str(j)
-                          + " / dvsb : " + str(round(prevDcnt / prevBcnt * 1.2, 2))
+                          + " / dvsb : " + str(round(prevDcnt / prevBcnt, 2))
                           + " / bvsd : " + str(round(prevBcnt / prevDcnt, 2))
                           + " / prevBcnt : "
                           + str(prevBcnt) + " / prevDcnt : " + str(prevDcnt) + " / entropy : " + str(
@@ -1069,11 +1077,11 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
                     print(
                         '######################################################################################################################################')
 
-                    # if (prevDcnt / prevBcnt > 0.8 and i >= paramLevel) or (i < paramLevel):
-                    tmpFF = conditionMake(tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, branch, name,
-                                          paramLevel, j,
-                                          paramLastRatio, limitCnt, lastYn)
-                    tmpMkL = tmpMkL.append(tmpFF)
+                    if prevBcnt > 0.8:
+                        tmpFF = conditionMake(tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, branch, name,
+                                              paramLevel, j,
+                                              paramLastRatio, limitCnt, lastYn)
+                        tmpMkL = tmpMkL.append(tmpFF)
 
                     try:
                         if i > 1:
@@ -1117,10 +1125,10 @@ if __name__ == '__main__':
     # 5 - 13s - 45% / 10 - 8s - 74% / 15 - 8s - 72 ~ 90% / 20 - 5s - 78 ~ 100%
     branch = 11
 
-    initData = pd.read_csv(path + name + '_com_11years.csv')
-    # data = pd.read_csv(path + 'sjtabuy_com1.csv')
-    initBcnt = data['pur_gubn5'].value_counts()[1]
-    initDcnt = data['pur_gubn5'].value_counts()[0]
+    initData = pd.read_csv(path + name + '_com.csv')
+    realInitData = initData
+    initBcnt = initData['pur_gubn5'].value_counts()[1]
+    initDcnt = initData['pur_gubn5'].value_counts()[0]
     limitCnt = initDcnt * paramLimitRatio * 0.01
     realFinal = pd.DataFrame()
     lastFinal = pd.DataFrame()
@@ -1162,7 +1170,7 @@ if __name__ == '__main__':
         realFinal = realFinal.sort_values('dvsb', ascending=False)
 
         # lastFinal[lastFinal['condi'] == 'dis5_ang1_dis20_ang1 > -5.7 AND atr_ang3_1bd > 11.7 AND dis5_ang1 <= 8.8 AND dis10_dis60 > -34.9']
-        # checkCondition(data, 'dis5_ang1_dis20_ang1 > -5.7 AND atr_ang3_1bd > 11.7 AND dis5_ang1 <= 8.8 AND dis10_dis60 > -34.9')
+        # checkCondition(data, 'close_low3d_rate <= 24.5 AND stdbal_bl_ang1_stdbal_bl_ang2 > 125.5 AND fast3D_fast10D <= 9.7 AND cci_ang2_1bd > 156.1 AND macd_sig_arc1 <= 88.8 AND slow10D_ang1 <= 1.7')
         lvl4Conds = pd.DataFrame()
         lvl4Data = data
 
@@ -1247,13 +1255,6 @@ if __name__ == '__main__':
         lastFinal = lastFinal.sort_values('dvsb', ascending=False)
         lastFinal = lastFinal[lastFinal['dvsb'] >= paramLastRatio]
 
-        try:
-            lastFinal.to_csv(
-                "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_" + str(
-                    vLoop) + "_result.csv")
-        except:
-            pass
-
         tmpLoopFinal = tmpLoopFinal.append(lastFinal)
 
         lastFinal['rDcnt'] = 0
@@ -1266,9 +1267,13 @@ if __name__ == '__main__':
             lastFinal['rDcnt'].iloc[m] = lvdcnt
             lastFinal['rBcnt'].iloc[m] = lvbcnt
             lastFinal['rDvsb'].iloc[m] = lvdvsb
-        #
-        # lastFinal.to_csv(
-        #     "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_random.csv")
+
+        try:
+            lastFinal.to_csv(
+                "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_" + str(
+                    vLoop) + "_result.csv")
+        except:
+            pass
 
         # loop 돌기 전 입력한 비율 값 보다 큰 dcnt & bcnt가 0인 조건을 만족하는 data만 빼낸다.
         lastFinal = lastFinal[(lastFinal['rDcnt'] >= limitCnt) & (lastFinal['rBcnt'] < 1)]
@@ -1281,7 +1286,7 @@ if __name__ == '__main__':
 
         # data.value_counts('pur_gubn5')
     tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
-    fResultMid = makeFinalSet(path, name, paramLastRatio)
+    fResultMid = makeFinalSet(path, name, paramLastRatio, realInitData)
     ray.shutdown()
     #####################################################################################################
     # 최종결과파일명   사용자 지정 이름_allnew_ddelTreeNew_result.csv

@@ -778,7 +778,7 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 #    ):
                 print('lvl_{}_{}.pkl'.format(lvl, u) + ' pickle file create')
                 with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
-                          + name + 'ReNew'
+                          + name + 'New'
                           + '/lvl_{}_{}.pkl'.format(lvl, u)
                         , 'wb') as f:
                     pickle.dump([tmpFinal, tmpBool, tmpAggr, tmpData, condition, tmpEntr], f)
@@ -885,15 +885,15 @@ def chkEndBranch(condi, data):
 
 def makeFinalSet(path, name, lastRatio):
     # 결과 합치기
-    lists = os.listdir("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/")
+    lists = os.listdir("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/")
 
     file_list_rslt = [file for file in lists if file.endswith("_result.csv") and file.startswith(name)]
 
     # 결과 합치기
     fResultMid = pd.DataFrame()
     for i in range(0, len(file_list_rslt)):
-        print("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + file_list_rslt[i])
-        tmp = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + file_list_rslt[i])
+        print("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + file_list_rslt[i])
+        tmp = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + file_list_rslt[i])
         fResultMid = fResultMid.append(tmp)
 
 
@@ -934,7 +934,7 @@ def makeFinalSet(path, name, lastRatio):
     fResultFin.to_csv(path + name + "_ddelTreeLoop_result_{}.csv".format(datetime.datetime.today().strftime(
                         "%Y%m%d%H%M%S")))
 
-    # os.remove("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
+    # os.remove("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_result.csv")
 
     return fResultFin
 
@@ -1020,7 +1020,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
     for i in range(0, paramLevel + 1):
         if i == 0:
             ## Save pickle
-            with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'ReNew' + '/lvl_0_1.pkl',
+            with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/lvl_0_1.pkl',
                       'wb') as f:
                 pickle.dump(['', '', data['pur_gubn5'], data, initCond, '', entropy(data['pur_gubn5'])], f)
         else:
@@ -1039,7 +1039,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
 
                 try:
                     with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                              + name + 'ReNew' + "/lvl_{}_{}.pkl".format(i - 1, j), "rb") as fr:
+                              + name + 'New' + "/lvl_{}_{}.pkl".format(i - 1, j), "rb") as fr:
                         tmp = pickle.load(fr)
 
                         # tmp = getattr(mod, 'lvl_{}_{}'.format(i - 1, j))
@@ -1080,10 +1080,10 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
                             print('delete pickle - lvl_{}_{}.pkl'.format(i - 1, j))
                             # print(e)
                             if os.path.isfile(
-                                    'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'ReNew' + '/lvl_{}_{}.pkl'.format(
+                                    'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/lvl_{}_{}.pkl'.format(
                                         i - 1, j)):
                                 os.remove(
-                                    'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'ReNew' + '/lvl_{}_{}.pkl'.format(
+                                    'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/lvl_{}_{}.pkl'.format(
                                         i - 1, j))
 
 
@@ -1141,15 +1141,15 @@ if __name__ == '__main__':
         # 4레벨까지 원래 도는 부분
         ######################################################################################################################################
         # PICKLE FILE DELETE
-        createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
-        removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
+        createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
+        removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
 
         realFinal = realFinal.append(makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, '', 'N'))
 
         realFinal = realFinal.astype(
             {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float', 'entr': 'float'})
 
-        # realFinal = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/lastFinal_result_5_20.csv")
+        # realFinal = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/lastFinal_result_5_20.csv")
 
         # 4레벨까지 돈 결과에서 bcnt가 0인 녀석들을 모아서 넣는다.
         lastFinal = realFinal[(realFinal['bcnt'] < 1) & (realFinal['dcnt'] > 0.8)]
@@ -1234,8 +1234,8 @@ if __name__ == '__main__':
         # vLoop = 0
         for u in range(0, len(lvl4Conds)):
             # PICKLE FILE DELETE
-            createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
-            removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
+            createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
+            removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
             print(str(u) + ' - ' + lvl4Conds.iloc[u].condi)
             tempGG = makeLevel(vLoop, paramAftLevel, paramLastRatio, limitCnt, name, branch, checkCondition(data, lvl4Conds.iloc[u].condi)[4], lvl4Conds.iloc[u].condi, 'Y')
             lastFinal = lastFinal.append(tempGG)
@@ -1246,13 +1246,13 @@ if __name__ == '__main__':
         lastFinal = lastFinal.sort_values('dvsb', ascending=False)
         lastFinal = lastFinal[lastFinal['dvsb'] >= paramLastRatio]
         # realFinal.to_csv(
-        #     "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/lastFinal_result_5_20.csv")
+        #     "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/lastFinal_result_5_20.csv")
 
         # checkCondition(data, 'dis5_ang1_dis20_ang1 > -5.7 AND atr_ang3_1bd > 11.7 AND dis5_ang1 <= 8.8 AND dis10_dis60 > -34.9')
 
         try:
             lastFinal.to_csv(
-                "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_" + str(
+                "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_" + str(
                     vLoop) + "_result.csv")
         except:
             pass
@@ -1281,7 +1281,7 @@ if __name__ == '__main__':
                 pass
 
         # data.value_counts('pur_gubn5')
-    tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
+    tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_result.csv")
     fResultMid = makeFinalSet(path, name, paramLastRatio)
     ray.shutdown()
     #####################################################################################################
@@ -1354,8 +1354,8 @@ if __name__ == '__main__':
         #             pass
         #     try:
         #         tmpLoopFinal.to_csv(
-        #             "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_" + str(
+        #             "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_" + str(
         #                 vLoop) + "_result.csv")
         #     except:
         #         pass
-        # realFinal = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/sjtabuy_0_result.csv")
+        # realFinal = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/sjtabuy_0_result.csv")
