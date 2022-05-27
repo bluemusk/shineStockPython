@@ -536,21 +536,15 @@ def entropy(target_col):
     entropy = -np.sum([(counts[i]/np.sum(counts))*np.log2(counts[i]/np.sum(counts)) for i in range(len(elements))])
     return entropy
 
-def splitData(data, aggr_df, prevBcnt, prevDcnt):
-    df_split = np.array_split(data.iloc[:, 5:data.shape[1] - 2], 20, axis=1)
-    tmp = [colValueCalc.remote(x, aggr_df) for x in df_split]
-
-    result = pd.concat([ray.get(tmp)[0], ray.get(tmp)[1], ray.get(tmp)[2], ray.get(tmp)[3], ray.get(tmp)[4],
-                        ray.get(tmp)[5]
-                           , ray.get(tmp)[6], ray.get(tmp)[7], ray.get(tmp)[8], ray.get(tmp)[9],
-                        ray.get(tmp)[10], ray.get(tmp)[11]
-                           , ray.get(tmp)[12], ray.get(tmp)[13], ray.get(tmp)[14], ray.get(tmp)[15],
-                        ray.get(tmp)[16], ray.get(tmp)[17]
-                           , ray.get(tmp)[18], ray.get(tmp)[19]], axis=1)
+def splitData(data, aggr_df, prevBcnt, prevDcnt, strs):
+    # strs = initStr
+    tmpFinal = pd.DataFrame()
 
     # result 20 split
-    rslt_split = np.array_split(result, 20, axis=1)
-    tmpRslt = [makeFinalDf.remote(y) for y in rslt_split]
+    rslt_split = np.array_split(strs, 20, axis=0)
+    tmpRslt = [checkConditionParallel.remote(data, y) for y in rslt_split]
+
+    # data[data['rsi_sig6_ang3_1bd'] > 0].value_counts('pur_gubn5')
 
     tmpFinal = pd.concat(
         [ray.get(tmpRslt)[0], ray.get(tmpRslt)[1], ray.get(tmpRslt)[2], ray.get(tmpRslt)[3],
@@ -561,6 +555,8 @@ def splitData(data, aggr_df, prevBcnt, prevDcnt):
             , ray.get(tmpRslt)[12], ray.get(tmpRslt)[13], ray.get(tmpRslt)[14], ray.get(tmpRslt)[15],
          ray.get(tmpRslt)[16], ray.get(tmpRslt)[17]
             , ray.get(tmpRslt)[18], ray.get(tmpRslt)[19]], axis=0)
+
+
 
     tmpFinal['prevBcnt'] = prevBcnt
     tmpFinal['prevDcnt'] = prevDcnt
@@ -580,11 +576,13 @@ def splitData(data, aggr_df, prevBcnt, prevDcnt):
     tmpFinal = tmpFinal.assign(rRat=lambda x: (x.prevBcnt - x.bcnt) / x.prevBcnt * 100)
     tmpFinal = tmpFinal.assign(rrr=lambda x: (x.dvsb - x.prevDcnt / x.prevBcnt) / (x.prevDcnt / x.prevBcnt))
 
+    tmpFinal = tmpFinal[~(tmpFinal['condi'] == 'X')]
+
     return tmpFinal
 
 #@profile
 def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum, lastLimitRatio,
-                  limitCnt, lastYn):
+                  limitCnt, lastYn, strs):
     # data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum = tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, 11, name, i, j
     tmpFinal = pd.DataFrame()
 
@@ -630,7 +628,8 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
 
 
             if u % branch == 1:
-                tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt)
+                tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt, strs)
+
                 firstBcnt = 0
                 firstDcnt = 0
 
@@ -763,7 +762,7 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                       + "\ndvsb : " + str(round(tmpExec['dvsb'], 2))
                       + " / bcnt : " + str(int(tmpExec['bcnt']))
                       + " / dcnt : " + str(int(tmpExec['dcnt']))
-                      + " / entropy : " + str(round(tmpEntr,2))
+                      + " / entropy : " + str(round(tmpEntr,3))
                       + " / condition : " + condition)
 
                 # 선택된 컬럼 삭제
@@ -778,7 +777,7 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 #    ):
                 print('lvl_{}_{}.pkl'.format(lvl, u) + ' pickle file create')
                 with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
-                          + name + 'New'
+                          + name + 'ReNew'
                           + '/lvl_{}_{}.pkl'.format(lvl, u)
                         , 'wb') as f:
                     pickle.dump([tmpFinal, tmpBool, tmpAggr, tmpData, condition, tmpEntr], f)
@@ -811,37 +810,41 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
 
     return fResultT
 
-def checkCondition(data, condition):
-    condition = pd.DataFrame(condition.split(' AND '))
-
-    for i in range(0, condition.shape[0]):
-        if condition.iloc[i, 0].find('<=') > 0:
-            con = condition.iloc[i, 0].split('<=')[0]
-            con = str(con).replace(' ', '')
-
-            try:
-                val = float(condition.iloc[i, 0].split('<=')[1])
-                data = data[data[con] <= val]
-            except Exception as e:
-                val = condition.iloc[i, 0].split('<=')[1]
-                val = str(val).replace(' ', '')
-                data = data[data[con] <= data[val]]
-                pass
-
-        else:
-            con = condition.iloc[i, 0].split('>')[0]
-            con = str(con).replace(' ', '')
-
-            try:
-                val = float(condition.iloc[i, 0].split('>')[1])
-                data = data[data[con] > val]
-            except Exception as e:
-                val = condition.iloc[i, 0].split('>')[1]
-                val = str(val).replace(' ', '')
-                data = data[data[con] > data[val]]
-                pass
-
-    return print(data.value_counts('pur_gubn5'))
+# def checkCondition(data, condition):
+#     # condition = strs.iloc[0]
+#     try:
+#         condition = pd.DataFrame(condition.split(' AND '))
+#     except:
+#         pass
+#
+#     for i in range(0, condition.shape[0]):
+#         if condition.iloc[i, 0].find('<=') > 0:
+#             con = condition.iloc[i, 0].split('<=')[0]
+#             con = str(con).replace(' ', '')
+#
+#             try:
+#                 val = float(condition.iloc[i, 0].split('<=')[1])
+#                 data = data[data[con] <= val]
+#             except Exception as e:
+#                 val = condition.iloc[i, 0].split('<=')[1]
+#                 val = str(val).replace(' ', '')
+#                 data = data[data[con] <= data[val]]
+#                 pass
+#
+#         else:
+#             con = condition.iloc[i, 0].split('>')[0]
+#             con = str(con).replace(' ', '')
+#
+#             try:
+#                 val = float(condition.iloc[i, 0].split('>')[1])
+#                 data = data[data[con] > val]
+#             except Exception as e:
+#                 val = condition.iloc[i, 0].split('>')[1]
+#                 val = str(val).replace(' ', '')
+#                 data = data[data[con] > data[val]]
+#                 pass
+#
+#     return print(data.value_counts('pur_gubn5'))
 
 def exceptColumn(data, expCondi):
     try:
@@ -885,15 +888,15 @@ def chkEndBranch(condi, data):
 
 def makeFinalSet(path, name, lastRatio, realInitData):
     # 결과 합치기
-    lists = os.listdir("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/")
+    lists = os.listdir("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/")
 
     file_list_rslt = [file for file in lists if file.endswith("_result.csv") and file.startswith(name)]
 
     # 결과 합치기
     fResultMid = pd.DataFrame()
     for i in range(0, len(file_list_rslt)):
-        print("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + file_list_rslt[i])
-        tmp = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + file_list_rslt[i])
+        print("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + file_list_rslt[i])
+        tmp = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + file_list_rslt[i])
         fResultMid = fResultMid.append(tmp)
 
 
@@ -935,13 +938,14 @@ def makeFinalSet(path, name, lastRatio, realInitData):
         fResultMid['bcnt'].iloc[m] = lvbcnt
         fResultMid['dvsb'].iloc[m] = lvdvsb
 
+
     fResultFin = fResultMid[fResultMid['chk'] == 0]
     fResultFin = fResultFin[fResultFin['dvsb'] >= lastRatio]
     fResultFin = fResultFin.sort_values('dvsb', ascending=False)  # dvsb가 좋은 순서로 정렬
-    fResultFin.to_csv(path + name + "_ddelTreeLoop_result_{}.csv".format(datetime.datetime.today().strftime(
+    fResultFin.to_csv(path + name + "_ddelTreeLoopRandom_result_{}.csv".format(datetime.datetime.today().strftime(
                         "%Y%m%d%H%M%S")))
 
-    # os.remove("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_result.csv")
+    # os.remove("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
 
     return fResultFin
 
@@ -996,6 +1000,77 @@ def checkCondition(ckData, ckCond):
 
     return ckData.index, dcnt, bcnt, dcnt / bcnt, ckData
 
+@ray.remote
+def checkConditionParallel(ckData, ckCond):
+    # ckData, ckCond = initData, rslt_split[0]
+    try:
+        finalSet = pd.DataFrame()
+        tmpData = pd.DataFrame()
+
+        for i in range(0, ckCond.shape[0]):
+            if ckCond.iloc[i, 0].find('<=') > 0:
+                con = ckCond.iloc[i, 0].split('<=')[0]
+                con = str(con).replace(' ', '')
+                cal = 'LT'
+
+                try:
+                    val = float(ckCond.iloc[i, 0].split('<=')[1])
+                    tmpData = ckData[ckData[con] <= val]
+                except Exception as e:
+                    val = ckCond.iloc[i, 0].split('<=')[1]
+                    val = str(val).replace(' ', '')
+                    tmpData = ckData[ckData[con] <= ckData[val]]
+                    pass
+
+            else:
+                con = ckCond.iloc[i, 0].split('>')[0]
+                con = str(con).replace(' ', '')
+                cal = 'GT'
+                try:
+                    if len(ckData[con]) > 0:
+                        try:
+                            val = float(ckCond.iloc[i, 0].split('>')[1])
+                            tmpData = ckData[ckData[con] > val]
+                        except Exception as e:
+                            val = ckCond.iloc[i, 0].split('>')[1]
+                            val = str(val).replace(' ', '')
+                            tmpData = ckData[ckData[con] > ckData[val]]
+                            pass
+                except:
+                    tmpData = pd.DataFrame()
+                    con = 'X'
+                    val = 0
+                    cal = 'NO'
+                    pass
+
+
+            if len(tmpData) > 0:
+                try:
+                    dcnt = tmpData.value_counts('pur_gubn5')[0]
+                except:
+                    dcnt = 0.8
+
+                try:
+                    bcnt = tmpData.value_counts('pur_gubn5')[1]
+                except:
+                    bcnt = 0.8
+            else:
+                dcnt = 0.8
+                bcnt = 0.8
+
+            finalSet = finalSet.append(
+                pd.DataFrame([(con, val, bcnt, dcnt, bcnt / dcnt, dcnt / bcnt, cal)],
+                             columns=['condi', 'value', 'bcnt', 'dcnt', 'bvsd', 'dvsb', 'cal']),
+                ignore_index=False)
+    except:
+        finalSet = finalSet.append(
+            pd.DataFrame([('X', 0, 0, 0, 0, 0, 'NO')],
+                         columns=['condi', 'value', 'bcnt', 'dcnt', 'bvsd', 'dvsb', 'cal']),
+            ignore_index=False)
+        pass
+
+    return finalSet
+
 def dropCol(ckData, ckCond):
     ckCond = pd.DataFrame(ckCond.split(' AND '))
 
@@ -1020,14 +1095,15 @@ def dropCol(ckData, ckCond):
 
     return ckData
 
-def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, initCond, lastYn):
+def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, initCond, lastYn, strs):
+    # vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, initCond, lastYn = vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, '', 'N'
     # vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, initCond = vLoop, 2, paramLastRatio, limitCnt, name, branch, checkCondition(data, lvl4Conds.iloc[u].condi)[4], lvl4Conds.iloc[u].condi
     tmpMkL = pd.DataFrame()
     # i,j=1,1
     for i in range(0, paramLevel + 1):
         if i == 0:
             ## Save pickle
-            with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/lvl_0_1.pkl',
+            with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'ReNew' + '/lvl_0_1.pkl',
                       'wb') as f:
                 pickle.dump(['', '', data['pur_gubn5'], data, initCond, '', entropy(data['pur_gubn5'])], f)
         else:
@@ -1046,7 +1122,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
 
                 try:
                     with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                              + name + 'New' + "/lvl_{}_{}.pkl".format(i - 1, j), "rb") as fr:
+                              + name + 'ReNew' + "/lvl_{}_{}.pkl".format(i - 1, j), "rb") as fr:
                         tmp = pickle.load(fr)
 
                         # tmp = getattr(mod, 'lvl_{}_{}'.format(i - 1, j))
@@ -1067,7 +1143,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
                         '######################################################################################################################################')
                     print("[" + str(vLoop) + "][" + datetime.datetime.today().strftime(
                         "%Y-%m-%d %H:%M:%S") + '] sourceData : lvl_' + str(i - 1) + '_' + str(j)
-                          + " / dvsb : " + str(round(prevDcnt / prevBcnt * 1.2, 2))
+                          + " / dvsb : " + str(round(prevDcnt / prevBcnt, 2))
                           + " / bvsd : " + str(round(prevBcnt / prevDcnt, 2))
                           + " / prevBcnt : "
                           + str(prevBcnt) + " / prevDcnt : " + str(prevDcnt) + " / entropy : " + str(
@@ -1079,7 +1155,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
                     if prevBcnt > 0.8:
                         tmpFF = conditionMake(tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, branch, name,
                                               paramLevel, j,
-                                              paramLastRatio, limitCnt, lastYn)
+                                              paramLastRatio, limitCnt, lastYn, strs)
                         tmpMkL = tmpMkL.append(tmpFF)
 
                     try:
@@ -1087,10 +1163,10 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
                             print('delete pickle - lvl_{}_{}.pkl'.format(i - 1, j))
                             # print(e)
                             if os.path.isfile(
-                                    'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/lvl_{}_{}.pkl'.format(
+                                    'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'ReNew' + '/lvl_{}_{}.pkl'.format(
                                         i - 1, j)):
                                 os.remove(
-                                    'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/lvl_{}_{}.pkl'.format(
+                                    'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'ReNew' + '/lvl_{}_{}.pkl'.format(
                                         i - 1, j))
 
 
@@ -1104,7 +1180,6 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
                     pass
     return tmpMkL
 
-
 if __name__ == '__main__':
     #####################################################################################################
     # 파라미터 세팅   초기 조건 만들지 안고 계속 20개 가지 치기
@@ -1116,21 +1191,26 @@ if __name__ == '__main__':
     paramLevel = 4  # 초기 LEVEL수
     paramAftLevel = 2  # 초기 LEVEL 이후 돌려야할 LEVEL수
     # paramLimitCnt = 7  # 초기데이터 중 dcnt대비 x개 이상의 가지만 돌리게 하는 조건
-    paramLimitRatio = 0.7 # 초기데이터 중 dcnt대비 곱하기 x 개 이상의 가지만 돌리게 하는 조건 (퍼센트 임!!)
+    paramLimitRatio = 0.6 # 초기데이터 중 dcnt대비 곱하기 x 개 이상의 가지만 돌리게 하는 조건 (퍼센트 임!!)
     paramLastRatio = 2  # 마지막 레벨에서 dvsb가 x:1 이상인 것만 돌리게 하는 조건
     paramLoop = 3  # loop Count Setting
     #####################################################################################################
+    ray.shutdown()
     ray.init(num_cpus=20, log_to_driver=False)
     # 5 - 13s - 45% / 10 - 8s - 74% / 15 - 8s - 72 ~ 90% / 20 - 5s - 78 ~ 100%
     branch = 11
 
-    data = pd.read_csv(path + name + '_com.csv')
-    initData = pd.read_csv(path + name + '_com_11years.csv')
-    realInitData = initData
+    # initData = pd.read_csv(path + name + '_com.csv')
 
-    # data = pd.read_csv(path + 'sjtabuy_com1.csv')
-    initBcnt = data['pur_gubn5'].value_counts()[1]
-    initDcnt = data['pur_gubn5'].value_counts()[0]
+    initData = pd.read_csv("C:/Users/Shine_anal/Desktop/" + name + '_com.csv')
+    initStr = pd.read_csv(path + name + '_com_str.csv', names=['condi'])
+
+    for x in range(0, len(initStr)):
+        initStr = initStr.append(pd.DataFrame([(initStr.iloc[x]['condi'].replace('>', '<='))], columns=['condi']))
+
+    realInitData = initData
+    initBcnt = initData['pur_gubn5'].value_counts()[1]
+    initDcnt = initData['pur_gubn5'].value_counts()[0]
     limitCnt = initDcnt * paramLimitRatio * 0.01
     realFinal = pd.DataFrame()
     lastFinal = pd.DataFrame()
@@ -1142,6 +1222,10 @@ if __name__ == '__main__':
 
     for vLoop in range(0, paramLoop):
         # vLoop = 0
+        # random으로 80% 추출
+        data = initData.sample(frac=0.8, random_state=1004)
+
+        # vLoop = 0
         tmpDcnt = data['pur_gubn5'].value_counts()[0]
         tmpBcnt = data['pur_gubn5'].value_counts()[1]
 
@@ -1149,15 +1233,17 @@ if __name__ == '__main__':
         # 4레벨까지 원래 도는 부분
         ######################################################################################################################################
         # PICKLE FILE DELETE
-        createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
-        removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
+        createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
+        removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
 
-        realFinal = realFinal.append(makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, '', 'N'))
+        realFinal = realFinal.append(makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, '', 'N', initStr))
 
         realFinal = realFinal.astype(
             {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float', 'entr': 'float'})
-
-        # realFinal = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/lastFinal_result_5_20.csv")
+        # realFinal.to_csv(
+        #         "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_" + str(
+        #             vLoop) + "_result222.csv")
+        # realFinal = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/lastFinal_result_5_20.csv")
 
         # 4레벨까지 돈 결과에서 bcnt가 0인 녀석들을 모아서 넣는다.
         lastFinal = realFinal[(realFinal['bcnt'] < 1) & (realFinal['dcnt'] > 0.8)]
@@ -1169,7 +1255,7 @@ if __name__ == '__main__':
         realFinal = realFinal.sort_values('dvsb', ascending=False)
 
         # lastFinal[lastFinal['condi'] == 'dis5_ang1_dis20_ang1 > -5.7 AND atr_ang3_1bd > 11.7 AND dis5_ang1 <= 8.8 AND dis10_dis60 > -34.9']
-        # checkCondition(data, 'dis5_ang1_dis20_ang1 > -5.7 AND atr_ang3_1bd > 11.7 AND dis5_ang1 <= 8.8 AND dis10_dis60 > -34.9')
+        # checkCondition(initData, 'vr25_1bd_rate > 115.0 AND slow5D_ang1_fast5D_ang2 > -1.0 AND close_open_close_3bd_open_arc > 22.0 AND aroon > 92.0 AND momp5_sig4_ang1_momp5_ang2 > -7.0 AND nmind_ang2 > 8.0')
         lvl4Conds = pd.DataFrame()
         lvl4Data = data
 
@@ -1218,20 +1304,22 @@ if __name__ == '__main__':
                 ################################################################################################################
                 # lvl4Cond에 설정한 dvsb보다 크고 dcnt가 가장 큰 조건을 저장한다..
                 realFinal = realFinal[realFinal['dvsb'] >= paramLastRatio]
-                # realFinal을 dcnt 내림차순으로 정렬
-                realFinal = realFinal.sort_values(['dcnt','bcnt'], ascending=[False, True])
 
-                lvl4Conds = lvl4Conds.append(
-                    pd.DataFrame([(realFinal.iloc[0]['condi'], realFinal.iloc[0]['bcnt'], realFinal.iloc[0]['dcnt'],
-                                   realFinal.iloc[0]['dvsb'])]
-                                 , columns=['condi', 'bcnt', 'dcnt', 'dvsb'])
-                )
+                if len(realFinal) > 0:
+                    # realFinal을 dcnt 내림차순으로 정렬
+                    realFinal = realFinal.sort_values(['dcnt','bcnt'], ascending=[False, True])
 
-                # 최종 결과 파일에 저장
-                lastFinal = lastFinal.append(realFinal.iloc[0])
+                    lvl4Conds = lvl4Conds.append(
+                        pd.DataFrame([(realFinal.iloc[0]['condi'], realFinal.iloc[0]['bcnt'], realFinal.iloc[0]['dcnt'],
+                                       realFinal.iloc[0]['dvsb'])]
+                                     , columns=['condi', 'bcnt', 'dcnt', 'dvsb'])
+                    )
 
-                # realFinal에서 가장 좋은 조건 삭제
-                realFinal = realFinal[~(realFinal['condi'] == realFinal.iloc[0]['condi'])]
+                    # 최종 결과 파일에 저장
+                    lastFinal = lastFinal.append(realFinal.iloc[0])
+
+                    # realFinal에서 가장 좋은 조건 삭제
+                    realFinal = realFinal[~(realFinal['condi'] == realFinal.iloc[0]['condi'])]
                 ################################################################################################################
 
             else:
@@ -1242,10 +1330,10 @@ if __name__ == '__main__':
         # vLoop = 0
         for u in range(0, len(lvl4Conds)):
             # PICKLE FILE DELETE
-            createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
-            removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
+            createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
+            removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'ReNew')
             print(str(u) + ' - ' + lvl4Conds.iloc[u].condi)
-            tempGG = makeLevel(vLoop, paramAftLevel, paramLastRatio, limitCnt, name, branch, checkCondition(data, lvl4Conds.iloc[u].condi)[4], lvl4Conds.iloc[u].condi, 'Y')
+            tempGG = makeLevel(vLoop, paramAftLevel, paramLastRatio, limitCnt, name, branch, checkCondition(data, lvl4Conds.iloc[u].condi)[4], lvl4Conds.iloc[u].condi, 'Y', initStr)
             lastFinal = lastFinal.append(tempGG)
 
         lastFinal = lastFinal.astype(
@@ -1253,17 +1341,6 @@ if __name__ == '__main__':
 
         lastFinal = lastFinal.sort_values('dvsb', ascending=False)
         lastFinal = lastFinal[lastFinal['dvsb'] >= paramLastRatio]
-        # realFinal.to_csv(
-        #     "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/lastFinal_result_5_20.csv")
-
-        # checkCondition(data, 'dis5_ang1_dis20_ang1 > -5.7 AND atr_ang3_1bd > 11.7 AND dis5_ang1 <= 8.8 AND dis10_dis60 > -34.9')
-
-        try:
-            lastFinal.to_csv(
-                "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_" + str(
-                    vLoop) + "_result.csv")
-        except:
-            pass
 
         tmpLoopFinal = tmpLoopFinal.append(lastFinal)
 
@@ -1271,99 +1348,37 @@ if __name__ == '__main__':
         lastFinal['rBcnt'] = 0
         lastFinal['rDvsb'] = 0
 
-        # _com 데이터에서 만들어낸 조건들을 11year 데이터에 대입해본다.
+        # 80% 랜덤으로 데이터 뽑은 것에서 만들어낸 조건들을 100% 데이터에 대입해본다.
         for m in range(0, len(lastFinal)):
             lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = checkCondition(initData, lastFinal.iloc[m]['condi'])
             lastFinal['rDcnt'].iloc[m] = lvdcnt
             lastFinal['rBcnt'].iloc[m] = lvbcnt
             lastFinal['rDvsb'].iloc[m] = lvdvsb
 
-        # loop 돌기 전 입력한 비율 값 보다 큰 rDcnt & rBcnt가 0인 조건을 만족하는 data만 빼낸다.
+        try:
+            lastFinal.to_csv(
+                "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_" + str(
+                    vLoop) + "_result.csv")
+        except:
+            pass
+
+        # loop 돌기 전 입력한 비율 값 보다 큰 dcnt & bcnt가 0인 조건을 만족하는 data만 빼낸다.
         lastFinal = lastFinal[(lastFinal['rDcnt'] >= limitCnt) & (lastFinal['rBcnt'] < 1)]
 
         for z in range(0, len(lastFinal)):
             try:
-                data = data.drop(index=checkCondition(data, lastFinal.iloc[z].condi)[0])
-                    # data = dropCol(data, realFinal.iloc[z]['condi'])
+                initData = initData.drop(index=checkCondition(initData, lastFinal.iloc[z].condi)[0])
             except:
                 pass
 
         # data.value_counts('pur_gubn5')
-    tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_result.csv")
+    tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTRENEW/" + name + "_result.csv")
     fResultMid = makeFinalSet(path, name, paramLastRatio, realInitData)
     ray.shutdown()
     #####################################################################################################
     # 최종결과파일명   사용자 지정 이름_allnew_ddelTreeNew_result.csv
     #####################################################################################################
     print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-    print('최종결과파일은 ' + path + name + '_ddelTreeLoop_result.csv  입니다.')
+    print('최종결과파일은 ' + path + name + '_ddelTreeLoopRandom_result.csv  입니다.')
     print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
     #####################################################################################################
-
-# realFinal = realFinal[realFinal['dvsb'] >= 2].sort_values(['dvsb','condi'], ascending=False)
-        # realFinal = realFinal[realFinal['lvl'].str.contains('lvl_6')]
-        #
-        # tmpRealFinal = pd.DataFrame()
-        #
-        # for p in range(0, realFinal.shape[0]):
-        #     setattr(mod, 'dat_' + str(p), [realFinal.iloc[p]['condi'], checkCondition(data, realFinal.iloc[p]['condi'])
-        #                                   ,realFinal.iloc[p]['bcnt']
-        #                                   ,realFinal.iloc[p]['dcnt']
-        #                                   ,realFinal.iloc[p]['bvsd']
-        #                                   ,realFinal.iloc[p]['dvsb']
-        #                                   ,realFinal.iloc[p]['entr']
-        #                                    ])
-        #
-        # for q in range(0, realFinal.shape[0] - 1):
-        #     if q == 0:
-        #         tmpRealFinal = tmpRealFinal.append(pd.DataFrame([getattr(mod, 'dat_' + str(q))]))
-        #     try:
-        #         tmpO = getattr(mod, 'dat_' + str(q))[1]
-        #         for r in range(q + 1, realFinal.shape[0]):
-        #             try:
-        #                 tmpP = getattr(mod, 'dat_' + str(r))[1]
-        #                 if np.isin(np.array(tmpO), np.array(tmpP)).any():
-        #                     try:
-        #                         delattr(mod, 'dat_' + str(q))
-        #                         delattr(mod, 'dat_' + str(r))
-        #                     except:
-        #                         pass
-        #                 else:
-        #                     for j in range(0, len(tmpRealFinal)):
-        #                         if np.isin(np.array(tmpRealFinal.iloc[j][1]), np.array(tmpP)).any():
-        #                             pass
-        #                         else:
-        #                             tmpRealFinal = tmpRealFinal.append(pd.DataFrame([getattr(mod, 'dat_' + str(r))]))
-        #                             delattr(mod, 'dat_' + str(r))
-        #                             break
-        #                     try:
-        #                         delattr(mod, 'dat_' + str(r))
-        #                     except:
-        #                         pass
-        #             except Exception as e:
-        #                 # print(e)
-        #                 pass
-        #     except Exception as e:
-        #         # print(e)
-        #         pass
-        #     try:
-        #         delattr(mod, 'dat_' + str(q))
-        #     except:
-        #         pass
-        #
-        # if len(tmpRealFinal) > 0:
-        #     tmpRealFinal.columns = ['condi', 'index', 'bcnt', 'dcnt', 'bvsd', 'dvsb', 'entr']
-        #
-        #     for z in range(0, len(tmpRealFinal)):
-        #         try:
-        #             data = data.drop(index=tmpRealFinal.iloc[z][1])
-        #             tmpLoopFinal = tmpLoopFinal.append(pd.DataFrame([tmpRealFinal.iloc[z]]))
-        #         except:
-        #             pass
-        #     try:
-        #         tmpLoopFinal.to_csv(
-        #             "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_" + str(
-        #                 vLoop) + "_result.csv")
-        #     except:
-        #         pass
-        # realFinal = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/sjtabuy_0_result.csv")
