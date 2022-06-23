@@ -763,7 +763,7 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                       + "\ndvsb : " + str(round(tmpExec['dvsb'], 2))
                       + " / bcnt : " + str(int(tmpExec['bcnt']))
                       + " / dcnt : " + str(int(tmpExec['dcnt']))
-                      + " / entropy : " + str(tmpEntr)
+                      + " / entropy : " + str(round(tmpEntr,2))
                       + " / condition : " + condition)
 
                 # 선택된 컬럼 삭제
@@ -1140,7 +1140,7 @@ if __name__ == '__main__':
 
     for vLoop in range(0, paramLoop):
         # random으로 80% 추출
-        data = initData.sample(frac=0.8, random_state=1004)
+        data = initData.sample(frac=0.8, random_state=104)
 
         # vLoop = 0
         tmpDcnt = data['pur_gubn5'].value_counts()[0]

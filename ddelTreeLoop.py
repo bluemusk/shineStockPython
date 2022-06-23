@@ -616,6 +616,16 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 data = data.drop(tmp, axis=1)
             except:
                 pass
+    
+    # 부등호 뒤집기 위한 변수들
+    rvCon = ''
+    rvVal = ''
+    rvCal = ''
+    rvCondition = ''
+    rvData = pd.DataFrame()
+    rvAggr = pd.DataFrame()
+    rvTmpFinal = pd.DataFrame()
+    rvEntropy = ''
 
     for u in range(branch * (lvlNum - 1) + 1, branch * lvlNum + 1):
         try:
@@ -628,9 +638,9 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
             tmpAggr = pd.DataFrame()
             tmpData = pd.DataFrame()
 
-
             if u % branch == 1:
                 tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt)
+                rvTmpFinal = tmpFinal
                 firstBcnt = 0
                 firstDcnt = 0
 
@@ -643,7 +653,27 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 firstDcnt = tmpExec.dcnt
                 firstCnt = 0
                 print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
+
+                rvCon = tmpExec['condi']
+                rvVal = float(tmpExec['value'])
+
+                if tmpExec['cal'] == 'GT':
+                    rvCondition = rvCon + ' <= ' + str(rvVal)
+                    rvCal = 'LT'
+                else:
+                    rvCondition = rvCon + ' > ' + str(rvVal)
+                    rvCal = 'GT'
             elif u % branch == 2:
+                prevBcnt = rvData.value_counts('pur_gubn5')[1]
+                prevDcnt = rvData.value_counts('pur_gubn5')[0]
+                rvTmpFinal = splitData(rvData, rvData['pur_gubn5'], prevBcnt, prevDcnt)
+                
+                # 이전 레벨 전체건수 20% 이상 dvsb가 가장 좋은 것
+                tmpExec = rvTmpFinal[(rvTmpFinal['dcnt'] + rvTmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.2)
+                                   & (rvTmpFinal['dcnt'] / rvTmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
+                                   ].sort_values('dvsb', ascending=False).iloc[0]
+            
+            elif u % branch == 3:
                 # lvl <= 2 일때 dcnt가 40%이상 감소 한것 중 dvsb가 가장 큰거
                 # 나머지 레벨에서는 dvsb가 가장 큰거
                 if lvl <= 2:
@@ -653,48 +683,48 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 else:
                     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                     ].sort_values('dvsb', ascending=False).iloc[0]
-            elif u % branch == 3:
+            elif u % branch == 4:
                 # 이전 레벨 전체건수 20% 이상 rrr이 가장 좋은 것
                 tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.2)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('rrr', ascending=False).iloc[0]
-            elif u % branch == 4:
+            elif u % branch == 5:
                 # 이전 레벨 dvsb 보다 크면서 bcnt가 가장 적은 것
                 #  ( lvl <= 2 일때 전체건수 30%이상 인것 중에서)
                 if lvl < 2:
                     tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] >= (prevBcnt + prevDcnt) * 0.3)
-                                      & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
+                                       & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                        ].sort_values('bcnt').iloc[0]
                 else:
                     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                     ].sort_values('bcnt').iloc[0]
-            elif u % branch == 5:
+            elif u % branch == 6:
                 # 이전 레벨 bcnt 40%이상 감소, 이전 dvsb보다 향상, dcnt가 가장 많은 것
                 tmpExec = tmpFinal[(tmpFinal['bcnt'] <= prevBcnt * 0.6)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('dcnt', ascending=False).iloc[0]
-            elif u % branch == 6:
+            elif u % branch == 7:
                 # bcnt가 이전 레벨 전체건수 25% 이하 dcnt가 가장 많은 것
                 tmpExec = tmpFinal[(tmpFinal['bcnt'] <= (prevBcnt + prevDcnt) * 0.25)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('dcnt', ascending=False).iloc[0]
-            elif u % branch == 7:
+            elif u % branch == 8:
                 # 이전 레벨 전체건수 30% 이상, dvsb가 가장 좋은 것
                 tmpExec = tmpFinal[(tmpFinal['dcnt'] + tmpFinal['bcnt'] > (prevBcnt + prevDcnt) * 0.3)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('dvsb', ascending=False).iloc[0]
-            elif u % branch == 8:
+            elif u % branch == 9:
                 # rRt상위 60% 중에서 dcnt가 가장 많은 것
                 tmpExec = tmpFinal[(tmpFinal['rRt'] > tmpFinal['rRt'].median())
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('dcnt', ascending=False).iloc[0]
-            elif u % branch == 9:
+            elif u % branch == 10:
                 # rRt가 이전레벨 dvsb보다 크면 sRt가 가장 큰것
                 # 아니면 rRat > 20 인 것 중에 rRt가 가장 큰것
                 tmpExec = tmpFinal[(tmpFinal['rRat'] >= 20)
                                    & (tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
                                    ].sort_values('rRt', ascending=False).iloc[0]
-            elif u % branch == 10:
+            elif u % branch == 11:
                 # lvl <= 2 rRat >= 30
                 # 이면서 sRt가 가장 큰것
                 if lvl <= 2:
@@ -703,8 +733,32 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                                        ].sort_values('dcnt', ascending=False).iloc[0]
                 else:
                     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
-                                       ].sort_values('sRt', ascending=False).iloc[0]
-            elif u % branch == 0:
+                    ].sort_values('sRt', ascending=False).iloc[0]
+
+                rvCon = tmpExec['condi']
+                rvVal = float(tmpExec['value'])
+
+                if tmpExec['cal'] == 'GT':
+                    rvCondition = rvCon + ' <= ' + str(rvVal)
+                    rvCal = 'LT'
+                else:
+                    rvCondition = rvCon + ' > ' + str(rvVal)
+                    rvCal = 'GT'
+            elif u % branch == 12:
+                prevBcnt = rvData.value_counts('pur_gubn5')[1]
+                prevDcnt = rvData.value_counts('pur_gubn5')[0]
+                rvTmpFinal = splitData(rvData, rvData['pur_gubn5'], prevBcnt, prevDcnt)
+
+                # lvl <= 2 rRat >= 30
+                # 이면서 sRt가 가장 큰것
+                if lvl <= 2:
+                    tmpExec = rvTmpFinal[(rvTmpFinal['rRat'] >= 30)
+                                       & (rvTmpFinal['dcnt'] / rvTmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
+                else:
+                    tmpExec = rvTmpFinal[(rvTmpFinal['dcnt'] / rvTmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
+                    ].sort_values('sRt', ascending=False).iloc[0]
+            elif u % branch == 13:
                 # lvl <= 2 rRat >= 30
                 # 이면서 rRt가 가장 큰것
                 if lvl <= 2:
@@ -713,8 +767,32 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                                        ].sort_values('rRt', ascending=False).iloc[0]
                 else:
                     tmpExec = tmpFinal[(tmpFinal['dcnt'] / tmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
-                                       ].sort_values('rRt', ascending=False).iloc[0]
+                    ].sort_values('rRt', ascending=False).iloc[0]
 
+                rvCon = tmpExec['condi']
+                rvVal = float(tmpExec['value'])
+
+                if tmpExec['cal'] == 'GT':
+                    rvCondition = rvCon + ' <= ' + str(rvVal)
+                    rvCal = 'LT'
+                else:
+                    rvCondition = rvCon + ' > ' + str(rvVal)
+                    rvCal = 'GT'
+            elif u % branch == 0:
+                prevBcnt = rvData.value_counts('pur_gubn5')[1]
+                prevDcnt = rvData.value_counts('pur_gubn5')[0]
+                rvTmpFinal = splitData(rvData, rvData['pur_gubn5'], prevBcnt, prevDcnt)
+
+                # lvl <= 2 rRat >= 30
+                # 이면서 rRt가 가장 큰것
+                if lvl <= 2:
+                    tmpExec = rvTmpFinal[(rvTmpFinal['rRat'] >= 30)
+                                       & (rvTmpFinal['dcnt'] / rvTmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
+                                       ].sort_values('rRt', ascending=False).iloc[0]
+                else:
+                    tmpExec = rvTmpFinal[(rvTmpFinal['dcnt'] / rvTmpFinal['bcnt'] > prevDcnt / prevBcnt * 1.2)
+                    ].sort_values('rRt', ascending=False).iloc[0]
+                
             # original - 14:3  / 1 - 12:0  / etc - 14:1
             if lastYn == 'Y':
                 if (firstDcnt / firstBcnt <= tmpExec.dvsb):
@@ -754,8 +832,14 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
 
                 tmpAggr = aggr_df[tmpBool]
                 tmpData = data[tmpBool]
-
                 tmpEntr = entropy(tmpAggr)
+                
+                if u == 1 or u == 11 or u == 13:
+                    rvAggr = ~tmpBool
+                    rvData = data[rvAggr]
+                    rvEntr = entropy(rvAggr)
+                if u == 2 or u == 12 or u == 14:
+                    condition =  rvCondition + ' AND ' + condition
 
                 print("[" + datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
                       + '] lvl'
@@ -1021,6 +1105,7 @@ def dropCol(ckData, ckCond):
     return ckData
 
 def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, initCond, lastYn):
+    # vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, initCond, lastYn = vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, '', 'N'
     # vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, initCond = vLoop, 2, paramLastRatio, limitCnt, name, branch, checkCondition(data, lvl4Conds.iloc[u].condi)[4], lvl4Conds.iloc[u].condi
     tmpMkL = pd.DataFrame()
     # i,j=1,1
@@ -1067,7 +1152,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
                         '######################################################################################################################################')
                     print("[" + str(vLoop) + "][" + datetime.datetime.today().strftime(
                         "%Y-%m-%d %H:%M:%S") + '] sourceData : lvl_' + str(i - 1) + '_' + str(j)
-                          + " / dvsb : " + str(round(prevDcnt / prevBcnt * 1.2, 2))
+                          + " / dvsb : " + str(round(prevDcnt / prevBcnt, 2))
                           + " / bvsd : " + str(round(prevBcnt / prevDcnt, 2))
                           + " / prevBcnt : "
                           + str(prevBcnt) + " / prevDcnt : " + str(prevDcnt) + " / entropy : " + str(
@@ -1076,7 +1161,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, branch, data, i
                     print(
                         '######################################################################################################################################')
 
-                    if prevBcnt > 0.8:
+                    if (i < 4 and prevBcnt > 0.8) or (i == 4 and prevDcnt / prevBcnt >= 0.3):
                         tmpFF = conditionMake(tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, branch, name,
                                               paramLevel, j,
                                               paramLastRatio, limitCnt, lastYn)
@@ -1120,9 +1205,10 @@ if __name__ == '__main__':
     paramLastRatio = 2  # 마지막 레벨에서 dvsb가 x:1 이상인 것만 돌리게 하는 조건
     paramLoop = 3  # loop Count Setting
     #####################################################################################################
+    ray.shutdown()
     ray.init(num_cpus=20, log_to_driver=False)
     # 5 - 13s - 45% / 10 - 8s - 74% / 15 - 8s - 72 ~ 90% / 20 - 5s - 78 ~ 100%
-    branch = 11
+    branch = 14
 
     data = pd.read_csv(path + name + '_com.csv')
     initData = pd.read_csv(path + name + '_com_11years.csv')
@@ -1169,7 +1255,7 @@ if __name__ == '__main__':
         realFinal = realFinal.sort_values('dvsb', ascending=False)
 
         # lastFinal[lastFinal['condi'] == 'dis5_ang1_dis20_ang1 > -5.7 AND atr_ang3_1bd > 11.7 AND dis5_ang1 <= 8.8 AND dis10_dis60 > -34.9']
-        # checkCondition(data, 'dis5_ang1_dis20_ang1 > -5.7 AND atr_ang3_1bd > 11.7 AND dis5_ang1 <= 8.8 AND dis10_dis60 > -34.9')
+        # checkCondition(initData, 'dis5_ang1_dis20_ang1 > -5.7 AND atr_ang3_1bd > 11.7 AND dis5_ang1 <= 8.8 AND dis20_ang2_dis60_ang2 > -3.2 AND slow5D_ang1_fast10D_ang1 <= 0.4 AND nmind_ang2 <= 38.8')
         lvl4Conds = pd.DataFrame()
         lvl4Data = data
 
@@ -1367,3 +1453,84 @@ if __name__ == '__main__':
         #     except:
         #         pass
         # realFinal = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/sjtabuy_0_result.csv")
+import pandas as pd
+df1 = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/check_sjtabuy_0_result.csv")
+df2 = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/check_sjtabuy_1_result.csv")
+df3 = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/check_sjtabuy_2_result.csv")
+df = pd.DataFrame()
+
+df = df.append(df1)
+df = df.append(df2)
+df = df.append(df3)
+dd = df[(['lvl', 'condi', 'dvsb','branch'])]
+
+final = dd[dd['dvsb'] >= 7]
+
+
+for p in range(0, len(final)):
+    final['condi'].iloc[p] = final.iloc[p]['condi'].split(' AND ')[0]
+
+q = final['condi'].drop_duplicates()
+
+dd['prLvl1'] = ''
+dd['prBra1'] = 0
+
+dd['prLvl2'] = ''
+dd['prBra2'] = 0
+
+dd['prLvl3'] = ''
+dd['prBra3'] = 0
+
+dd['prLvl4'] = ''
+dd['prBra4'] = 0
+
+xx = pd.DataFrame()
+# i=0
+# k=0
+for i in range(0, len(q)):
+    try:
+        for k in range(0, len(dd)):
+            try:
+                print(str(i) + ' / ' + str(k) + ' / ' + q.iloc[i] + ' / ' + dd.iloc[k]['condi'])
+                if dd.iloc[k]['condi'].find(q.iloc[i]) >= 0:
+                    xx = xx.append(pd.DataFrame([dd.iloc[k]]))
+            except:
+                pass
+
+    except Exception as e:
+        print(e)
+        pass
+
+xx = xx.drop_duplicates()
+
+for k in range(0, len(xx) - 1):
+    for i in range(1, len(xx)):
+        print(str(k) + ' / ' + str(i) + ' / ' + xx.iloc[i]['condi'])
+        if xx.iloc[i]['condi'].find(xx.iloc[k]['condi']) >= 0:
+            for x in range(1, len(dd)):
+                try:
+                    print(str(i) + ' / ' + str(x) + ' / ' + xx.iloc[x]['condi'])
+                    if xx.iloc[x]['lvl'][4:5] == '2':
+                        if xx.iloc[x]['condi'].find(xx.iloc[i]['condi']) >= 0:
+                            dd['prLvl1'].iloc[x] = xx.iloc[i]['lvl']
+                            dd['prBra1'].iloc[x] = xx.iloc[i]['branch']
+
+                    elif xx.iloc[x]['lvl'][4:5] == '3':
+                        if xx.iloc[x]['condi'].find(xx.iloc[i]['condi']) >= 0:
+                            dd['prLvl2'].iloc[x] = xx.iloc[i]['lvl']
+                            dd['prBra2'].iloc[x] = xx.iloc[i]['branch']
+
+                    elif xx.iloc[x]['lvl'][4:5] == '4':
+                        if xx.iloc[x]['condi'].find(xx.iloc[i]['condi']) >= 0:
+                            dd['prLvl3'].iloc[x] = xx.iloc[i]['lvl']
+                            dd['prBra3'].iloc[x] = xx.iloc[i]['branch']
+
+                    elif xx.iloc[x]['lvl'][4:5] == '1':
+                        if xx.iloc[x]['condi'].find(xx.iloc[i]['condi']) >= 0:
+                            dd['prLvl4'].iloc[x] = xx.iloc[i]['lvl']
+                            dd['prBra4'].iloc[x] = xx.iloc[i]['branch']
+                except:
+                    pass
+
+xx.to_csv.to_csv(
+                "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/finalCheck_result.csv")

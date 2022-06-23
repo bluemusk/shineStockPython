@@ -775,16 +775,13 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 except:
                     pass
 
-                # if (lvl < limitLvl - 1 and tmpExec['dcnt'] > limitCnt) or (
-                #         lvl == limitLvl - 1 and tmpExec['dcnt'] > 10
-                #         # and (tmpEntr >= 0.72 or tmpEntr <= 0.28) and tmpExec['dvsb'] > 0.3
-                #    ):
-                print('lvl_{}_{}.pkl'.format(lvl, u) + ' pickle file create')
-                with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
-                          + name + 'New'
-                          + '/lvl_{}_{}.pkl'.format(lvl, u)
-                        , 'wb') as f:
-                    pickle.dump([tmpFinal, tmpBool, tmpAggr, tmpData, condition, tmpEntr, fBranch], f)
+                if lvl <= limitLvl - 1 and int(tmpExec['bcnt']) > 0.8:
+                    print('lvl_{}_{}.pkl'.format(lvl, u) + ' pickle file create')
+                    with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
+                            + name + 'New'
+                            + '/lvl_{}_{}.pkl'.format(lvl, u)
+                            , 'wb') as f:
+                        pickle.dump([tmpFinal, tmpBool, tmpAggr, tmpData, condition, tmpEntr, fBranch], f)
 
                 try:
                     fResultT = fResultT.append(
