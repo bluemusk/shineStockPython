@@ -538,13 +538,11 @@ def colValueCalc(col, aggr_df):
 
     return rtnDf
 
-
 def entropy(target_col):
     elements, counts = np.unique(target_col, return_counts=True)
     entropy = -np.sum(
         [(counts[i] / np.sum(counts)) * np.log2(counts[i] / np.sum(counts)) for i in range(len(elements))])
     return entropy
-
 
 def splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt):
     df_split = np.array_split(data.iloc[:, 5:data.shape[1] - 2], 20, axis=1)
@@ -594,7 +592,6 @@ def splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt):
     tmpFinal = tmpFinal.drop_duplicates()
 
     return tmpFinal
-
 
 def changeCondition(origin):
     origin = origin.split(' ')
@@ -648,7 +645,6 @@ def checkConditionCnt(data, condition):
 
     return print(data.value_counts('pur_gubn5'))
 
-
 def exceptColumn(data, expCondi):
     try:
         for i in range(0, expCondi.shape[0]):
@@ -663,12 +659,10 @@ def exceptColumn(data, expCondi):
 
     return data
 
-
 def removeAllFile(directory):
     if os.path.exists(directory):
         for file in os.scandir(directory):
             os.remove(file.path)
-
 
 def createFolder(directory):
     try:
@@ -677,7 +671,6 @@ def createFolder(directory):
     except OSError:
         print('Error: Creating directory. ' + directory)
         pass
-
 
 @ray.remote
 def chkEndBranch(condi, data):
@@ -692,35 +685,11 @@ def chkEndBranch(condi, data):
 
     return chkEnd
 
-def calcRatioDf(paramData):
-    df = paramData
-
-    if df.value_counts('pur_gubn5')[0] >= 8000:
-        paramLimitRatio = 0.1  # 초기데이터 중 dcnt대비
-    elif df.value_counts('pur_gubn5')[0] >= 3500:
-        paramLimitRatio = 0.2  # 초기데이터 중 dcnt대비
-    elif df.value_counts('pur_gubn5')[0] >= 2500 and df.value_counts('pur_gubn5')[0] <= 3499:
-        paramLimitRatio = 0.3  # 초기데이터 중 dcnt대비
-    elif df.value_counts('pur_gubn5')[0] >= 1500 and df.value_counts('pur_gubn5')[0] <= 2499:
-        paramLimitRatio = 0.4  # 초기데이터 중 dcnt대비
-    elif df.value_counts('pur_gubn5')[0] >= 900 and df.value_counts('pur_gubn5')[0] <= 1499:
-        paramLimitRatio = 0.7  # 초기데이터 중 dcnt대비
-    elif df.value_counts('pur_gubn5')[0] >= 600 and df.value_counts('pur_gubn5')[0] <= 899:
-        paramLimitRatio = 0.9  # 초기데이터 중 dcnt대비
-    elif df.value_counts('pur_gubn5')[0] >= 400 and df.value_counts('pur_gubn5')[0] <= 599:
-        paramLimitRatio = 1.2  # 초기데이터 중 dcnt대비
-    elif df.value_counts('pur_gubn5')[0] >= 250 and df.value_counts('pur_gubn5')[0] <= 399:
-        paramLimitRatio = 1.5  # 초기데이터 중 dcnt대비
-    elif df.value_counts('pur_gubn5')[0] >= 50 and df.value_counts('pur_gubn5')[0] <= 249:
-        paramLimitRatio = 2.2  # 초기데이터 중 dcnt대비
-
-    return paramLimitRatio
-
 def makeFinalSet(path, name, lastRatio, initData, limitCnt):
     # 결과 합치기
     # import pandas as pd
     lists = os.listdir("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/")
-    file_list_rslt = [file for file in lists if file.endswith("_result.csv") and file.find(name) > 0 and file.find('[MD]') > 0]
+    file_list_rslt = [file for file in lists if file.endswith("_result.csv") and file.find(name) > 0 and file.find('[PMN]') > 0]
 
     # 결과 합치기
     fResultMid = pd.DataFrame()
@@ -798,12 +767,9 @@ def makeFinalSet(path, name, lastRatio, initData, limitCnt):
 
     return fResultFin
 
-
 def checkCondition(ckData, ckCond):
     # ckData, ckCond = lvl4Data, realFinal.iloc[0]['condi']
     try:
-        ckCond = ckCond.replace('(','')
-        ckCond = ckCond.replace(')', '')
         ckCond = pd.DataFrame(ckCond.split(' AND '))
 
         for i in range(0, ckCond.shape[0]):
@@ -853,7 +819,6 @@ def checkCondition(ckData, ckCond):
 
     return ckData.index, dcnt, bcnt, dcnt / bcnt, ckData
 
-
 def dropCol(ckData, ckCond):
     ckCond = pd.DataFrame(ckCond.split(' AND '))
 
@@ -877,7 +842,6 @@ def dropCol(ckData, ckCond):
                 pass
 
     return ckData
-
 
 # @profile
 def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum, lastLimitRatio,
@@ -910,467 +874,157 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 if u % branch == 1:
                     tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt)
                     firstBcnt, firstDcnt, tmpZeroCnt = 0, 0, 0
-
-                    tmpExec = tmpFinal[(tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.78)].sort_values('dvsb', ascending=False).iloc[0]
+                    if lvl == 1:
+                        tmpExec = tmpFinal[tmpFinal['bcnt'] + tmpFinal['dcnt']
+                                       > (tmpFinal['prevBcnt'] + tmpFinal['prevDcnt']) * 0.2 \
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
+                    else:
+                        tmpExec = tmpFinal[(tmpInvFinal['bcnt'] < tmpInvFinal['prevBcnt'] * 0.7)].sort_values('dcnt', ascending=False).iloc[0]
 
                     firstBcnt = tmpExec.bcnt
                     firstDcnt = tmpExec.dcnt
                     firstCnt = 0
 
                     print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
-                elif u % branch == 2:
-                    if lvl == 1:
-                        try:
-                            with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                                      + name + 'New' + "/lvl_{}_{}.pkl".format(lvl, u - 1), "rb") as fr:
-                                tmpInv = pickle.load(fr)
-
-                        except Exception as e:
-                            tmpInv = pd.DataFrame()
-                            pass
-
-                        data = data.drop(tmpInv[3].index)
-                        aggr_df = data['pur_gubn5']
-
-                        tmpInvCon = ''
-                        tmpInvCon = changeCondition(tmpInv[4])
-                        tmpInvCon = '(' + tmpInvCon + ')'
-
-                        prevInvDcnt = data['pur_gubn5'].value_counts()[0]
-                        prevInvBcnt = data['pur_gubn5'].value_counts()[1]
-
-                        tmpInvFinal = splitData(data, data['pur_gubn5'], prevInvBcnt, prevInvDcnt, limitCnt)
-
-                        tmpExec = tmpInvFinal[tmpInvFinal['dcnt'] > tmpInvFinal['prevDcnt'] * 0.7 \
-                                              ].sort_values('bcnt').iloc[0]
-                    else:
-                        tmpExec = tmpFinal[tmpFinal['dcnt'] > tmpFinal['prevDcnt'] * 0.7 \
-                                           ].sort_values('bcnt').iloc[0]
-                elif u % branch == 3:
-                    if lvl == 1:
-                        try:
-                            with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                                      + name + 'New' + "/lvl_{}_{}.pkl".format(lvl, u - 1), "rb") as fr:
-                                tmpInv = pickle.load(fr)
-
-                        except Exception as e:
-                            tmpInv = pd.DataFrame()
-                            pass
-
-                        data = data.drop(tmpInv[3].index)
-                        aggr_df = data['pur_gubn5']
-
-                        tmpInvCon = ''
-                        tmpInvCon = changeCondition(tmpInv[4])
-                        tmpInvCon = '(' + tmpInvCon + ')'
-
-                        prevInvDcnt = data['pur_gubn5'].value_counts()[0]
-                        prevInvBcnt = data['pur_gubn5'].value_counts()[1]
-
-                        tmpInvFinal = splitData(data, data['pur_gubn5'], prevInvBcnt, prevInvDcnt, limitCnt)
-
-                        tmpExec = tmpInvFinal[(tmpInvFinal['rRat'] > 20) & (tmpInvFinal['bcnt'] < tmpInvFinal['prevBcnt'] * 0.8) \
-                            ].sort_values('dcnt', ascending=False).iloc[0]
-                    else:
-                        tmpExec = tmpFinal[(tmpFinal['rRat'] > 20) & (tmpInvFinal['bcnt'] < tmpInvFinal['prevBcnt'] * 0.8)\
-                            ].sort_values('dcnt', ascending=False).iloc[0]
                 elif u % branch == 0:
-                    tmpExec = \
-                    tmpFinal[tmpFinal['bcnt'] <= (tmpFinal['prevBcnt'] + tmpFinal['prevDcnt']) * 0.25].sort_values(
-                        'dcnt', ascending=False).iloc[0]
-
+                    tmpExec = tmpFinal[tmpFinal['bcnt'] + tmpFinal['dcnt']
+                                       > (tmpFinal['prevBcnt'] + tmpFinal['prevDcnt']) * 0.4 \
+                                       ].sort_values('rrr', ascending=False).iloc[0]
             elif treeNm == 'tree2':
                 if u % branch == 1:
                     tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt)
                     firstBcnt, firstDcnt, tmpZeroCnt = 0, 0, 0
-
-                    tmpExec = tmpFinal[tmpFinal['bcnt'] + tmpFinal['dcnt']
-                                       > (tmpFinal['prevBcnt'] + tmpFinal['prevDcnt']) * 0.3 \
-                                       ].sort_values('dvsb', ascending=False).iloc[0]
+                    if lvl == 1:
+                        tmpExec = tmpFinal[tmpFinal['bcnt'] + tmpFinal['dcnt']
+                                       > (tmpFinal['prevBcnt'] + tmpFinal['prevDcnt']) * 0.5 \
+                                       ].sort_values('bcnt').iloc[0]
+                    else:
+                        tmpExec = tmpFinal[tmpFinal['bcnt'] + tmpFinal['dcnt']
+                                       > (tmpFinal['prevBcnt'] + tmpFinal['prevDcnt']) * 0.5].sort_values('dvsb', ascending=False).iloc[0]
 
                     firstBcnt = tmpExec.bcnt
                     firstDcnt = tmpExec.dcnt
                     firstCnt = 0
+
                     print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
-                elif u % branch == 2:
-                    if lvl == 1:
-                        try:
-                            with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                                      + name + 'New' + "/lvl_{}_{}.pkl".format(lvl, u - 1), "rb") as fr:
-                                tmpInv = pickle.load(fr)
-
-                        except Exception as e:
-                            tmpInv = pd.DataFrame()
-                            pass
-
-                        data = data.drop(tmpInv[3].index)
-                        aggr_df = data['pur_gubn5']
-
-                        tmpInvCon = ''
-                        tmpInvCon = changeCondition(tmpInv[4])
-                        tmpInvCon = '(' + tmpInvCon + ')'
-
-                        prevInvDcnt = data['pur_gubn5'].value_counts()[0]
-                        prevInvBcnt = data['pur_gubn5'].value_counts()[1]
-
-                        tmpInvFinal = splitData(data, data['pur_gubn5'], prevInvBcnt, prevInvDcnt, limitCnt)
-
-                        tmpExec = tmpInvFinal.sort_values('dcnt', ascending=False).iloc[0]
-                    else:
-                        tmpExec = tmpFinal[tmpFinal['dcnt'] > tmpFinal['prevDcnt'] * 0.8].sort_values('dvsb',
-                                                                                                      ascending=False).iloc[
-                            0]
-                elif u % branch == 3:
-                    tmpExec = tmpFinal[tmpFinal['bcnt'] + tmpFinal['dcnt']
-                                       < (tmpFinal['prevBcnt'] + tmpFinal['prevDcnt']) * 0.8 \
-                                       ].sort_values('dvsb', ascending=False).iloc[2]
                 elif u % branch == 0:
-                    if lvl == 1:
-                        try:
-                            with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                                      + name + 'New' + "/lvl_{}_{}.pkl".format(lvl, u - 1), "rb") as fr:
-                                tmpInv = pickle.load(fr)
-
-                        except Exception as e:
-                            tmpInv = pd.DataFrame()
-                            pass
-
-                        data = data.drop(tmpInv[3].index)
-                        aggr_df = data['pur_gubn5']
-
-                        tmpInvCon = ''
-                        tmpInvCon = changeCondition(tmpInv[4])
-                        tmpInvCon = '(' + tmpInvCon + ')'
-
-                        prevInvDcnt = data['pur_gubn5'].value_counts()[0]
-                        prevInvBcnt = data['pur_gubn5'].value_counts()[1]
-
-                        tmpInvFinal = splitData(data, data['pur_gubn5'], prevInvBcnt, prevInvDcnt, limitCnt)
-
-                        tmpExec = tmpInvFinal[tmpInvFinal['prevBcnt'] > 0.8 \
-                                              ].sort_values('dcnt', ascending=False).iloc[0]
-                    else:
-                        tmpExec = tmpFinal[tmpFinal['dcnt'] > limitCnt \
-                                           ].sort_values('dvsb', ascending=False).iloc[0]
+                    tmpExec = tmpFinal[tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.8 \
+                                       ].sort_values('rGr', ascending=False).iloc[0]
             elif treeNm == 'tree3':
                 if u % branch == 1:
                     tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt)
                     firstBcnt, firstDcnt, tmpZeroCnt = 0, 0, 0
-
-                    tmpExec = tmpFinal[tmpFinal['bcnt'] + tmpFinal['dcnt']
-                                       > (tmpFinal['prevBcnt'] + tmpFinal['prevDcnt']) * 0.4 \
-                                       ].sort_values('dvsb', ascending=False).iloc[0]
+                    if lvl == 1:
+                        tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) * 1.01 \
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
+                    else:
+                        tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) * 1.05 \
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
 
                     firstBcnt = tmpExec.bcnt
                     firstDcnt = tmpExec.dcnt
                     firstCnt = 0
+
                     print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
-                elif u % branch == 2:
-                    tmpExec = \
-                    tmpFinal[(tmpFinal['dcnt'] > tmpFinal['prevDcnt'] * 0.8)].sort_values('rRat', ascending=False).iloc[
-                        0]
-                elif u % branch == 3:
-                    tmpExec = tmpFinal[(tmpFinal['rRat'] > 20) & \
-                                       (tmpFinal['dcnt'] > tmpFinal['prevDcnt'] * 0.2)].sort_values('dvsb',
-                                                                                                    ascending=False).iloc[
-                        2]
                 elif u % branch == 0:
-                    tmpExec = \
-                    tmpFinal[(tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.9)].sort_values('rGr', ascending=False).iloc[
-                        0]
+                    tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) * 1.05].sort_values('fRt', ascending=False).iloc[0]
             elif treeNm == 'tree4':
                 if u % branch == 1:
                     tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt)
                     firstBcnt, firstDcnt, tmpZeroCnt = 0, 0, 0
-                    
-
-                    tmpExec = tmpFinal[(tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.8) & (
-                                tmpFinal['dcnt'] > tmpFinal['prevDcnt'] * 0.6) \
-                                       ].sort_values('dvsb', ascending=False).iloc[1]
+                    if lvl == 1:
+                        tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) \
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
+                    else:
+                        tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) \
+                                       ].sort_values('qRt', ascending=False).iloc[0]
 
                     firstBcnt = tmpExec.bcnt
                     firstDcnt = tmpExec.dcnt
                     firstCnt = 0
+
                     print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
-                elif u % branch == 2:
-                    tmpExec = tmpFinal[(tmpFinal['dcnt'] > tmpFinal['prevDcnt'] * 0.5)].sort_values('rrr', ascending=False).iloc[2]
-                elif u % branch == 3:
-                    tmpExec = tmpFinal[(tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.95) & (
-                                tmpFinal['dcnt'] > tmpFinal['prevDcnt'] * 0.7)].sort_values('rRat',
-                                                                                            ascending=False).iloc[1]
                 elif u % branch == 0:
-                    if lvl == 1:
-                        try:
-                            with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                                      + name + 'New' + "/lvl_{}_{}.pkl".format(lvl, u - 1), "rb") as fr:
-                                tmpInv = pickle.load(fr)
-
-                        except Exception as e:
-                            tmpInv = pd.DataFrame()
-                            pass
-
-                        data = data.drop(tmpInv[3].index)
-                        aggr_df = data['pur_gubn5']
-
-                        tmpInvCon = ''
-                        tmpInvCon = changeCondition(tmpInv[4])
-                        tmpInvCon = '(' + tmpInvCon + ')'
-
-                        prevInvDcnt = data['pur_gubn5'].value_counts()[0]
-                        prevInvBcnt = data['pur_gubn5'].value_counts()[1]
-
-                        tmpInvFinal = splitData(data, data['pur_gubn5'], prevInvBcnt, prevInvDcnt, limitCnt)
-
-                        tmpExec = tmpInvFinal[(tmpInvFinal['dcnt'] > tmpInvFinal['prevDcnt'] * 0.4)].sort_values('dcnt',
-                                                                                                                 ascending=False).iloc[
-                            0]
-                    else:
-                        tmpExec = tmpFinal[(tmpFinal['dcnt'] > tmpFinal['prevDcnt'] * 0.4)].sort_values('rGr',
-                                                                                                        ascending=False).iloc[
-                            0]
+                    tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) * 1.1].sort_values('sRt', ascending=False).iloc[0]
             elif treeNm == 'tree5':
                 if u % branch == 1:
                     tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt)
                     firstBcnt, firstDcnt, tmpZeroCnt = 0, 0, 0
-
-                    tmpExec = tmpFinal[tmpFinal['rRat'] > 20]
-
-                    tmpFinalChk = tmpFinal[tmpFinal['rRt'] > tmpFinal['dvsb']]
-
-                    if tmpFinalChk['dvsb'].count() > 0:
-                        tmpExec = \
-                        tmpFinal[tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.9].sort_values('rRt',
-                                                                                                               ascending=False).iloc[
-                            0]
+                    if lvl == 1:
+                        tmpExec = tmpFinal[tmpFinal['dcnt'] > (tmpFinal['prevDcnt']) * 0.8 \
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
                     else:
-                        tmpExec = \
-                        tmpFinal[tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.9].sort_values('sRt',
-                                                                                                               ascending=False).iloc[
-                            0]
+                        tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) \
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
 
                     firstBcnt = tmpExec.bcnt
                     firstDcnt = tmpExec.dcnt
                     firstCnt = 0
+
                     print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
-                elif u % branch == 2:
-                    tmpExec = tmpFinal[tmpFinal['dcnt']
-                                       > tmpFinal['prevDcnt'] * 0.7 \
-                                       ].sort_values('dvsb', ascending=False).iloc[2]
-                elif u % branch == 3:
-                    tmpExec = tmpFinal[tmpFinal['bcnt'] + tmpFinal['dcnt']
-                                       > (tmpFinal['prevBcnt'] + tmpFinal['prevDcnt']) * 0.23].sort_values('bcnt').iloc[
-                        0]
                 elif u % branch == 0:
-                    tmpExec = \
-                    tmpFinal[(tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.8)].sort_values('fRt', ascending=False).iloc[
-                        1]
+                    tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) * 1.07].sort_values('rRt', ascending=False).iloc[0]
             elif treeNm == 'tree6':
                 if u % branch == 1:
                     tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt)
                     firstBcnt, firstDcnt, tmpZeroCnt = 0, 0, 0
-
-                    if lvl > 0 and lvl <= 3:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 45]
-                    elif lvl > 3 and lvl <= 6:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 35]
-                    elif lvl > 6 and lvl <= 9:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 25]
-
-                    tmpExec = \
-                    tmpFinal[(tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.8)].sort_values('rRt', ascending=False).iloc[
-                        0]
+                    if lvl == 1:
+                        tmpExec = tmpFinal[(tmpFinal['rRat'] > 20) & (tmpFinal['rRt'] > tmpFinal['dvsb']) \
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
+                    else:
+                        tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) \
+                                       ].sort_values('pRt', ascending=False).iloc[0]
 
                     firstBcnt = tmpExec.bcnt
                     firstDcnt = tmpExec.dcnt
+                    firstCnt = 0
+
+                    print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
                 elif u % branch == 0:
-                    if lvl == 1:
-                        try:
-                            with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                                      + name + 'New' + "/lvl_{}_{}.pkl".format(lvl, u - 1), "rb") as fr:
-                                tmpInv = pickle.load(fr)
-
-                        except Exception as e:
-                            tmpInv = pd.DataFrame()
-                            pass
-
-                        data = data.drop(tmpInv[3].index)
-                        aggr_df = data['pur_gubn5']
-
-                        tmpInvCon = ''
-                        tmpInvCon = changeCondition(tmpInv[4])
-                        tmpInvCon = '(' + tmpInvCon + ')'
-
-                        prevInvDcnt = data['pur_gubn5'].value_counts()[0]
-                        prevInvBcnt = data['pur_gubn5'].value_counts()[1]
-
-                        tmpInvFinal = splitData(data, data['pur_gubn5'], prevInvBcnt, prevInvDcnt, limitCnt)
-
-                        if lvl > 0 and lvl <= 3:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 45]
-                        elif lvl > 3 and lvl <= 6:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 35]
-                        elif lvl > 6 and lvl <= 9:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 25]
-
-                        tmpExec = tmpInvFinal[(tmpInvFinal['bcnt'] < tmpInvFinal['prevBcnt'] * 0.8)].sort_values('sRt',
-                                                                                                           ascending=False).iloc[
-                            0]
-                    else:
-                        tmpExec = tmpFinal[(tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.8)].sort_values('sRt',
-                                                                                                        ascending=False).iloc[
-                            0]
+                    tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt'])].sort_values('rrr', ascending=False).iloc[0]
             elif treeNm == 'tree7':
                 if u % branch == 1:
                     tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt)
                     firstBcnt, firstDcnt, tmpZeroCnt = 0, 0, 0
-
-                    if lvl > 0 and lvl <= 2:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 40]
-                    elif lvl > 2 and lvl <= 4:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 30]
-                    elif lvl > 4 and lvl <= 6:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 20]
-                    elif lvl > 6:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 7]
-
-                    tmpExec = \
-                    tmpFinal[(tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.7)].sort_values('dcnt', ascending=False).iloc[
-                        0]
+                    if lvl == 1:
+                        tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) \
+                                       ].sort_values('dcnt', ascending=False).iloc[0]
+                    else:
+                        tmpExec = tmpFinal[(tmpFinal['rRat'] > 20) & (tmpFinal['rRt'] > tmpFinal['dvsb']) \
+                                       ].sort_values('sRt', ascending=False).iloc[0]
 
                     firstBcnt = tmpExec.bcnt
                     firstDcnt = tmpExec.dcnt
+                    firstCnt = 0
 
                     print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
                 elif u % branch == 0:
-                    if lvl == 1:
-                        try:
-                            with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                                      + name + 'New' + "/lvl_{}_{}.pkl".format(lvl, u - 1), "rb") as fr:
-                                tmpInv = pickle.load(fr)
-
-                        except Exception as e:
-                            tmpInv = pd.DataFrame()
-                            pass
-
-                        data = data.drop(tmpInv[3].index)
-                        aggr_df = data['pur_gubn5']
-
-                        tmpInvCon = ''
-                        tmpInvCon = changeCondition(tmpInv[4])
-                        tmpInvCon = '(' + tmpInvCon + ')'
-
-                        prevInvDcnt = data['pur_gubn5'].value_counts()[0]
-                        prevInvBcnt = data['pur_gubn5'].value_counts()[1]
-
-                        tmpInvFinal = splitData(data, data['pur_gubn5'], prevInvBcnt, prevInvDcnt, limitCnt)
-
-                        if lvl > 0 and lvl <= 2:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 35]
-                        elif lvl > 2 and lvl <= 4:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 25]
-                        elif lvl > 4 and lvl <= 6:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 15]
-                        elif lvl > 6:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 5]
-
-                        tmpExec = tmpInvFinal[(tmpInvFinal['bcnt'] < tmpInvFinal['prevBcnt'] * 0.75)].sort_values('rGr', ascending=False).iloc[0]
-                    else:
-                        tmpExec = tmpFinal[(tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.75)].sort_values('rGr', ascending=False).iloc[0]
+                    tmpExec = tmpFinal[(tmpFinal['rRat'] > 20) & (tmpFinal['rRt'] > tmpFinal['dvsb']) \
+                                       ].sort_values('rRt', ascending=False).iloc[0]
             elif treeNm == 'tree8':
                 if u % branch == 1:
                     tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt)
                     firstBcnt, firstDcnt, tmpZeroCnt = 0, 0, 0
 
-                    tmpExec = tmpFinal[tmpFinal['bcnt']
-                                       < tmpFinal['prevBcnt'] * 0.8].sort_values('dcnt', ascending=False).iloc[4]
+                    tmpExec = tmpFinal[tmpFinal['dvsb'] > (tmpFinal['prevDcnt'] / tmpFinal['prevBcnt']) \
+                                    ].sort_values('dcnt', ascending=False).iloc[0]
 
                     firstBcnt = tmpExec.bcnt
                     firstDcnt = tmpExec.dcnt
                     firstCnt = 0
+
                     print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
-                elif u % branch == 2:
+                elif u % branch == 0:
                     if lvl > 0 and lvl <= 2:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 38]
+                        tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 35]
                     elif lvl > 2 and lvl <= 4:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 28]
+                        tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 25]
                     elif lvl > 4 and lvl <= 6:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 18]
+                        tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 15]
                     elif lvl > 6:
-                        tmpFinal = tmpFinal[tmpFinal['rRat'] > 5]
+                        tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 5]
 
-                    tmpExec = tmpFinal.sort_values('fRt', ascending=False).iloc[3]
-                elif u % branch == 0:
-                    tmpFinal = tmpFinal[tmpFinal['rRat'] > 10]
-
-                    tmpFinalChk = tmpFinal[tmpFinal['rRt'] > tmpFinal['dvsb']]
-
-                    if tmpFinalChk['dvsb'].count() > 0:
-                        tmpExec = tmpFinal.sort_values('rGr', ascending=False).iloc[4]
-                    else:
-                        tmpExec = tmpFinal.sort_values('sRt', ascending=False).iloc[4]
-            elif treeNm == 'tree9':
-                if u % branch == 1:
-                    tmpFinal = splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt)
-                    firstBcnt, firstDcnt, tmpZeroCnt = 0, 0, 0
-
-                    tmpExec = tmpFinal[tmpFinal['bcnt'] + tmpFinal['dcnt']
-                                       > (tmpFinal['prevBcnt'] + tmpFinal['prevDcnt']) * 0.1].sort_values('dvsb',
-                                                                                                          ascending=False).iloc[
-                        0]
-
-                    firstBcnt = tmpExec.bcnt
-                    firstDcnt = tmpExec.dcnt
-                    firstCnt = 0
-                    print('firstDcnt : ' + str(firstDcnt) + ' / firstBcnt : ' + str(firstBcnt))
-                elif u % branch == 2:
-                    tmpFinal = tmpFinal[tmpFinal['rRat'] > 10]
-
-                    tmpFinalChk = tmpFinal[tmpFinal['rRt'] > tmpFinal['dvsb']]
-                    #
-                    if tmpFinalChk['dvsb'].count() > 0:
-                        tmpExec = tmpFinal[tmpFinal['dcnt'] > tmpFinal['prevDcnt'] * 0.7].sort_values('rRt', ascending=False).iloc[4]
-                    else:
-                        tmpExec = tmpFinal[tmpFinal['dcnt'] > tmpFinal['prevDcnt'] * 0.7].sort_values('sRt', ascending=False).iloc[4]
-                elif u % branch == 3:
-                    if lvl == 1:
-                        try:
-                            with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                                      + name + 'New' + "/lvl_{}_{}.pkl".format(lvl, u - 1), "rb") as fr:
-                                tmpInv = pickle.load(fr)
-
-                        except Exception as e:
-                            tmpInv = pd.DataFrame()
-                            pass
-
-                        data = data.drop(tmpInv[3].index)
-                        aggr_df = data['pur_gubn5']
-
-                        tmpInvCon = ''
-                        tmpInvCon = changeCondition(tmpInv[4])
-                        tmpInvCon = '(' + tmpInvCon + ')'
-
-                        prevInvDcnt = data['pur_gubn5'].value_counts()[0]
-                        prevInvBcnt = data['pur_gubn5'].value_counts()[1]
-
-                        tmpInvFinal = splitData(data, data['pur_gubn5'], prevInvBcnt, prevInvDcnt, limitCnt)
-
-                        if lvl > 0 and lvl <= 2:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 35]
-                        elif lvl > 2 and lvl <= 4:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 25]
-                        elif lvl > 4 and lvl <= 6:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 15]
-                        elif lvl > 6:
-                            tmpInvFinal = tmpInvFinal[tmpInvFinal['rRat'] > 5]
-
-                        tmpExec = tmpInvFinal[tmpInvFinal['sRt'] > tmpInvFinal['sRt'].mean()].sort_values('dcnt',
-                                                                                                          ascending=False).iloc[
-                            0]
-                    else:
-                        tmpExec = \
-                        tmpFinal[tmpFinal['sRt'] > tmpFinal['sRt'].mean()].sort_values('dcnt', ascending=False).iloc[0]
-                elif u % branch == 0:
-                    tmpExec = tmpFinal[tmpFinal['bcnt'] < tmpFinal['prevBcnt'] * 0.9].sort_values('rGr', ascending=False).iloc[0]
+                    tmpExec = tmpFinal.sort_values('sRt', ascending=False).iloc[0]
 
             if len(tmpExec) > 0:
                 conH = tmpExec['condi']
@@ -1445,16 +1099,15 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                               + name + 'New'
                               + '/lvl_{}_{}.pkl'.format(lvl, u)
                             , 'wb') as f:
-                        pickle.dump([tmpFinal, tmpBool, tmpAggr, tmpData, condition, tmpEntr, fBranch, tmpData.index],
-                                    f)
+                        pickle.dump([tmpFinal, tmpBool, tmpAggr, tmpData, condition, tmpEntr, fBranch, tmpData.index], f)
 
                 try:
                     fResultT = fResultT.append(
                         pd.DataFrame(
-                            [(loopCnt, treeNm, 'lvl_' + str(lvl) + '_' + str(u), condition, str(int(tmpExec['dcnt'])),
-                              str(int(tmpExec['bcnt'])), tmpExec['dcnt'] / tmpExec['bcnt'],
-                              tmpExec['bcnt'] / tmpExec['dcnt'], str(round(tmpEntr, 2)), fBranch, tmpData.index)],
-                            columns=['loop', 'tree', 'lvl', 'condi', 'dcnt', 'bcnt', 'dvsb', 'bvsd', 'entr', 'branch', 'index']))
+                            [(loopCnt, treeNm, 'lvl_' + str(lvl) + '_' + str(u), condition, str(int(tmpExec['bcnt'])),
+                              str(int(tmpExec['dcnt'])), tmpExec['bcnt'] / tmpExec['dcnt'],
+                              tmpExec['dcnt'] / tmpExec['bcnt'], str(round(tmpEntr, 2)), fBranch, tmpData.index)],
+                            columns=['loop', 'tree', 'lvl', 'condi', 'bcnt', 'dcnt', 'bvsd', 'dvsb', 'entr', 'branch', 'index']))
 
                 except Exception as e:
                     pass
@@ -1509,9 +1162,9 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
             # print(e)
             fResultT = fResultT.append(
                 pd.DataFrame([(loopCnt, treeNm, 'lvl_' + str(lvl) + '_' + str(u), '', '0',
-                               '0', '0', '0', '0', 'X', '')],
-                             columns=['loop', 'tree', 'lvl', 'condi', 'dcnt', 'bcnt', 'dvsb', 'bvsd', 'entr',
-                                      'branch', 'index']))
+                               '0', '0', '0', '0', 'X')],
+                             columns=['loop', 'tree', 'lvl', 'condi', 'bcnt', 'dcnt', 'bvsd', 'dvsb', 'entr',
+                                      'branch']))
             pass
 
     return fResultT
@@ -1520,16 +1173,14 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
     # vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond, lastYn = 0, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N'
     tmpMkL = pd.DataFrame()
 
-    trees = pd.DataFrame([('tree1', 4)], columns=('treeNm', 'branch'))
-    # trees = pd.DataFrame([('tree8', 3)], columns=('treeNm', 'branch'))
-    trees = trees.append(pd.DataFrame([('tree2', 4)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree3', 4)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree4', 4)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree5', 4)], columns=('treeNm', 'branch')))
+    trees = pd.DataFrame([('tree1', 2)], columns=('treeNm', 'branch'))
+    trees = trees.append(pd.DataFrame([('tree2', 2)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree3', 2)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree4', 2)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree5', 2)], columns=('treeNm', 'branch')))
     trees = trees.append(pd.DataFrame([('tree6', 2)], columns=('treeNm', 'branch')))
     trees = trees.append(pd.DataFrame([('tree7', 2)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree8', 3)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree9', 4)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree8', 2)], columns=('treeNm', 'branch')))
     # row,i,j = 0,1,1
     for row in range(0, trees.shape[0]):
         for i in range(0, paramLevel + 1):
@@ -1554,6 +1205,18 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
                     prevDcnt = 0.8
                     tmp = pd.DataFrame()
 
+                    # # 7레벨 시작 전 가망 없는 애들은 정리하고 시작
+                    # if i == 7 and j == 1:
+                    #     delFile = tmpMkL[tmpMkL['bcnt'] > 50].str.contains('lvl_7')]
+                    #
+                    #     for h in range(0, len(delFile)):
+                    #         if os.path.isfile(
+                    #                 'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/{}.pkl'.format(
+                    #                     delFile['lvl'].iloc[h])):
+                    #             os.remove(
+                    #                 'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/{}.pkl'.format(
+                    #                     delFile['lvl'].iloc[h]))
+
                     # import pandas as pd
                     # name = 'kbuy2'  # 사용자 지정 명
                     # path = "C:/Users/Shine_anal/Desktop/inott/"  # 사용자 지정명 + _com.csv 파일이 존재하는 폴더 (분석할 csv파일)
@@ -1574,7 +1237,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
                     #     tmpSevenData = data
                     #     tmpSevenLvlSet['index'] = ''
                     #     tmpSevenLvlSet['delYn'] = 'N'
-                    #
+
                     #     # 각 조건 별로 bcnt, dcnt, dvsb를 다시 계산
                     #     # y=2
                     #     try:
@@ -1587,10 +1250,10 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
                     #             tmpSevenLvlSet = tmpSevenLvlSet.astype(
                     #                 {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float',
                     #                  'entr': 'float'})
-                    #
+
                     #             if tmpSevenLvlSet['delYn'].iloc[y] == 'N':
                     #                 tmpDelPickle = pd.DataFrame()
-                    #
+
                     #                 for x in range(0, len(tmpSevenLvlSet)):
                     #                     # limitCnt 보다 큰 녀석들 중 dvsb가 가장 큰 녀석을 뽑고 데이터도 빼낸다.
                     #                     lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = checkCondition(tmpSevenData,
@@ -1601,12 +1264,12 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
                     #                     tmpSevenLvlSet['dcnt'].iloc[x] = lvdcnt
                     #                     tmpSevenLvlSet['bcnt'].iloc[x] = lvbcnt
                     #                     tmpSevenLvlSet['dvsb'].iloc[x] = lvdvsb
-                    #
+
                     #                     print(str(x) + ' / ' + str(
                     #                         len(tmpSevenLvlSet)) + ' - lvl6 After - ' + str(
                     #                         y) + ' - dcnt : ' + str(lvdcnt) + ' / bcnt : ' + str(
                     #                         lvbcnt) + ' / dvsb : ' + str(lvdvsb))
-                    #
+
                     #                 # 전부 대입해서 가장 좋은 조건의 데이터를 빼낸다음 dcnt는 0이고 bcnt는 0보다 큰 녀석들의 피클파일을 삭제한다.
                     #                 # dcnt == 0 and bcnt > 0 인 피클 파일을 삭제한다..
                     #                 tmpDelPickle = tmpSevenLvlSet[
@@ -1615,7 +1278,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
                     #                 tmpDelPickle = tmpDelPickle.append(tmpSevenLvlSet[(
                     #                                                                    tmpSevenLvlSet[
                     #                                                                        'dcnt'] < limitCnt)])
-                    #
+
                     #                 if len(tmpDelPickle) > 0:
                     #                     for h in range(0, len(tmpDelPickle)):
                     #                         if os.path.isfile(
@@ -1624,31 +1287,31 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
                     #                             os.remove(
                     #                                 'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/{}.pkl'.format(
                     #                                     tmpDelPickle['lvl'].iloc[h]))
-                    #
+
                     #                             tmpSevenLvlSet['delYn'][
                     #                                 tmpSevenLvlSet['lvl'] == tmpDelPickle['lvl'].iloc[
                     #                                     h]] = 'Y'
-                    #
+
                     #                             print(
                     #                                 'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/{}.pkl'.format(
                     #                                     tmpDelPickle['lvl'].iloc[h]) + ' - Delete')
-                    #
+
                     #                 ################################################################################################################
                     #                 # tmpSevenLvlSet을 dvsb 내림차순으로 정렬
                     #                 tmpSevenLvlSet = tmpSevenLvlSet.sort_values('dvsb', ascending=False)
-                    #
+
                     #                 tmpSevenLvlSet = tmpSevenLvlSet[
                     #                     (tmpSevenLvlSet['dvsb'] >= 0.62) & (tmpSevenLvlSet['dcnt'] >= limitCnt)]
-                    #
+
                     #                 # 가장 좋은 비율의 조건을 'Y' 표기
                     #                 tmpSevenLvlSet['delYn'].iloc[0] = 'Y'
-                    #
+
                     #                 # dvsb가 가장 좋은 조건의 데이터를 빼낸다
                     #                 try:
                     #                     tmpSevenData = tmpSevenData.drop(index=tmpSevenLvlSet.iloc[0]['index'])
                     #                 except:
                     #                     pass
-                    #
+
                     #     except Exception as e:
                     #         print(e)
                     #         pass
@@ -1673,7 +1336,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
 
                         print(
                             '######################################################################################################################################')
-                        print("[Loop - " + str(vLoop) + "][" + name + "][MD][" + trees.iloc[
+                        print("[Loop - " + str(vLoop) + "][" + name + "][PMN][" + trees.iloc[
                             row].treeNm + "][" + datetime.datetime.today().strftime(
                             "%Y-%m-%d %H:%M:%S") + '] sourceData : lvl_' + str(i - 1) + '_' + str(j)
                               + " / dvsb : " + str(round(prevDcnt / prevBcnt, 2))
@@ -1686,7 +1349,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
                             '######################################################################################################################################')
 
                         if (i <= 6 and prevBcnt > 0.8 and prevDcnt > limitCnt) or \
-                                (i > 6 and prevBcnt > 0.8 and prevDcnt > limitCnt and prevDcnt / prevBcnt > 1.2):
+                                (i > 6 and prevBcnt > 0.8 and prevDcnt > limitCnt and prevDcnt / prevBcnt > 0.62):
                             tmpFF = conditionMake(tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, trees.iloc[row].branch,
                                                   name,
                                                   paramLevel, j,
@@ -1717,7 +1380,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
 
         try:
             tmpMkL.to_csv(
-                "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[Loop - " + str(vLoop) + "][MD][" +
+                "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[Loop - " + str(vLoop) + "][PMN][" +
                 trees.iloc[row].treeNm + "]" + name + "_result.csv")
         except:
             pass

@@ -302,34 +302,15 @@ if __name__ == '__main__':
     #####################################################################################################
     # kbuy2
     #####################################################################################################
-    name = ['kbuy2', 'kbuy1'  # 사용자 지정 명
+    name = ['kbuy2','kbuy1','sbuy3','sbuy2','ncbuy3','ncbuy2','sjtabuy']  # 사용자 지정 명
     path = "C:/Users/Shine_anal/Desktop/inott/"  # 사용자 지정명 + _com.csv 파일이 존재하는 폴더 (분석할 csv파일)
 
-    executeMD(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
-    executePM(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
-    executePMN(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
-    fResultMid = md.makeFinalSet(path, name, paramLastRatio, initData, limitCnt)
-    ray.shutdown()
-    #####################################################################################################
-    # 최종결과파일명   사용자 지정 이름__ddelTreeLoopFinal_result.csv
-    #####################################################################################################
-    print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-    print('최종결과파일은 ' + path + name + '_ddelTreeLoopFinal_result.csv  입니다.')
-    print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-    #####################################################################################################
-
-
-    #####################################################################################################
-    # kbuy1
-    #####################################################################################################
-    name = 'kbuy1'  # 사용자 지정 명
-    path = "C:/Users/Shine_anal/Desktop/inott/"  # 사용자 지정명 + _com.csv 파일이 존재하는 폴더 (분석할 csv파일)
-
-    executeMD(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
-    executePM(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
-    executePMN(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
-    fResultMid = md.makeFinalSet(path, name, paramLastRatio, initData, limitCnt)
-    ray.shutdown()
+    for paramName in name:
+        executeMD(paramName, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
+        executePM(paramName, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
+        executePMN(paramName, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
+        fResultMid = md.makeFinalSet(path, paramName, paramLastRatio, initData, limitCnt)
+        ray.shutdown()
     #####################################################################################################
     # 최종결과파일명   사용자 지정 이름__ddelTreeLoopFinal_result.csv
     #####################################################################################################
