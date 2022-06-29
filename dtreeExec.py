@@ -15,12 +15,191 @@ import dtreeLoopPMN as pmn
 warnings.filterwarnings('ignore')
 
 
-def executeMD(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio):
+def executeMD(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio, paramMemoryYn):
     ray.init(num_cpus=20, log_to_driver=False)
     branch = 11
 
     # 분석할 데이터
+    # if name == 'kbuy2':
+    #     data = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + "kbuy2" + "_com_loop2.csv")
+    #     startLoopNum = 2
+    # else:
     data = pd.read_csv(path + name + '_com.csv')
+    # startLoopNum = 0
+    realInitData = data
+
+    # 검증할 데이터
+    initData = pd.read_csv(path + name + '_11year.csv')
+
+    initBcnt = data['pur_gubn5'].value_counts()[1]
+    initDcnt = data['pur_gubn5'].value_counts()[0]
+    lastFinal = pd.DataFrame()
+    tmpFF = pd.DataFrame()
+    tmpLoopFinal = pd.DataFrame()
+    mod = sys.modules[__name__]
+    data = data.sample(frac=paramRandomRatio, random_state=104)
+    # vLoop = 0
+    # for vLoop in range(startLoopNum, paramLoop):
+
+    vLoop = paramLoop
+
+    # random으로 데이터 봅기
+
+    limitCnt = initDcnt * calcRatioLoop(data) * 0.01
+    print('limitCnt : ' + str(limitCnt))
+
+    # vLoop = 0
+    tmpDcnt = data['pur_gubn5'].value_counts()[0]
+    tmpBcnt = data['pur_gubn5'].value_counts()[1]
+
+    ######################################################################################################################################
+    # 4레벨까지 원래 도는 부분
+    ######################################################################################################################################
+    # PICKLE FILE DELETE
+    md.createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
+    md.removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
+
+    lastFinal = lastFinal.append(
+        md.makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N', paramMemoryYn))
+
+    lastFinal = lastFinal.astype(
+        {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float', 'entr': 'float'})
+
+    lastFinal = lastFinal[lastFinal['condi'] != '']
+    lastFinal = lastFinal[lastFinal['dvsb'] >= limitCnt]
+
+    tmpLoopFinal = tmpLoopFinal.append(lastFinal)
+    # lastFinal = pd.read_csv('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[Loop - 1][MD][tree9]kbuy2_result.csv')
+    lastFinal['rDcnt'] = 0
+    lastFinal['rBcnt'] = 0
+    lastFinal['rDvsb'] = 0
+    lastFinal['vIndex'] = ''
+
+    lastFinal = lastFinal.dropna()
+
+    # _com 데이터에서 만들어낸 조건들을 11year 데이터에 대입해본다.
+    for m in range(0, len(lastFinal)):
+        print(str(m) + ' / ' + str(len(lastFinal)) + ' - ' + lastFinal.iloc[m]['condi'])
+        lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = md.checkCondition(initData, lastFinal.iloc[m]['condi'])
+        lastFinal['rDcnt'].iloc[m] = lvdcnt
+        lastFinal['rBcnt'].iloc[m] = lvbcnt
+        lastFinal['rDvsb'].iloc[m] = lvdvsb
+        lastFinal['vIndex'].iloc[m] = lvindex
+
+        # lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = md.checkCondition(data, lastFinal.iloc[m]['condi'])
+        # lastFinal['index'].iloc[m] = lvindex
+
+    # loop 돌기 전 입력한 비율 값 보다 큰 rDcnt & rBcnt가 0인 조건을 만족하는 data만 빼낸다.
+    lastFinal = lastFinal[(lastFinal['rDcnt'] >= limitCnt) & (lastFinal['rBcnt'] < 1)]
+
+    data['delYn'] = 'N'
+
+    if len(lastFinal) > 0:
+        for z in range(0, len(lastFinal)):
+            # z=0
+            try:
+                # data = realInitData.drop(index=md.checkCondition(realInitData, lastFinal.iloc[z].condi)[0])
+                data['delYn'].iloc[lastFinal['index'].iloc[z]] = 'Y'
+            except:
+                pass
+
+    data = data[data['delYn'] == 'N'] # 30744 - 25420 / 5324
+    data.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[MD]" + name + "_com_loop" + vLoop + ".csv")
+    # data.value_counts('pur_gubn5')
+    tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[MD]" + name + "_result.csv")
+
+    return initData, limitCnt
+
+def executePM(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio, paramMemoryYn):
+    ray.init(num_cpus=20, log_to_driver=False)
+    branch = 11
+
+    # 분석할 데이터
+    data = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[MD]" + name + "_com_loop" + str(paramLoop) + ".csv")
+    data = data.sample(frac=paramRandomRatio, random_state=104)
+    # 검증할 데이터
+    initData = pd.read_csv(path + name + '_11year.csv')
+
+    initBcnt = data['pur_gubn5'].value_counts()[1]
+    initDcnt = data['pur_gubn5'].value_counts()[0]
+    lastFinal = pd.DataFrame()
+    tmpFF = pd.DataFrame()
+    tmpLoopFinal = pd.DataFrame()
+    mod = sys.modules[__name__]
+
+    vLoop = paramLoop
+
+    # for vLoop in range(0, paramLoop):
+    # random으로 데이터 봅기
+    # data = data.sample(frac=paramRandomRatio, random_state=104)
+    limitCnt = initDcnt * calcRatioLoop(data) * 0.01
+    print('limitCnt : ' + str(limitCnt))
+
+    # vLoop = 0
+    tmpDcnt = data['pur_gubn5'].value_counts()[0]
+    tmpBcnt = data['pur_gubn5'].value_counts()[1]
+
+    ######################################################################################################################################
+    # 4레벨까지 원래 도는 부분
+    ######################################################################################################################################
+    # PICKLE FILE DELETE
+    pm.createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
+    pm.removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
+
+    lastFinal = lastFinal.append(
+        pm.makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N', paramMemoryYn))
+
+    lastFinal = lastFinal.astype(
+        {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float', 'entr': 'float'})
+
+    lastFinal = lastFinal[lastFinal['condi'] != '']
+
+    tmpLoopFinal = tmpLoopFinal.append(lastFinal)
+
+    lastFinal['rDcnt'] = 0
+    lastFinal['rBcnt'] = 0
+    lastFinal['rDvsb'] = 0
+    lastFinal['vIndex'] = ''
+
+    # _com 데이터에서 만들어낸 조건들을 11year 데이터에 대입해본다.
+    for m in range(0, len(lastFinal)):
+        print(str(m) + ' / ' + str(len(lastFinal)) + lastFinal.iloc[m]['condi'])
+        lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = pm.checkCondition(initData, lastFinal.iloc[m]['condi'])
+        lastFinal['rDcnt'].iloc[m] = lvdcnt
+        lastFinal['rBcnt'].iloc[m] = lvbcnt
+        lastFinal['rDvsb'].iloc[m] = lvdvsb
+        lastFinal['vIndex'].iloc[m] = lvindex
+
+    # loop 돌기 전 입력한 비율 값 보다 큰 rDcnt & rBcnt가 0인 조건을 만족하는 data만 빼낸다.
+    lastFinal = lastFinal[(lastFinal['rDcnt'] >= limitCnt) & (lastFinal['rBcnt'] < 1)]
+
+    data['delYn'] = 'N'
+
+    if len(lastFinal) > 0:
+        for z in range(0, len(lastFinal)):
+            try:
+                # data = realInitData.drop(index=pm.checkCondition(realInitData, lastFinal.iloc[z].condi)[0])
+                data['delYn'].iloc[lastFinal['index'].iloc[z]] = 'Y'
+            except:
+                pass
+    else:
+        pass
+
+    data = data[data['delYn'] == 'N']
+    data.to_csv(
+        "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[PM]" + name + "_com_loop" + vLoop + ".csv")
+    # data.value_counts('pur_gubn5')
+    tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[PM]" + name + "_result.csv")
+
+    return initData, limitCnt
+
+def executePMN(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio, paramMemoryYn):
+    ray.init(num_cpus=20, log_to_driver=False)
+    branch = 11
+
+    # 분석할 데이터
+    data = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[PM]" + name + "_com_loop" + str(paramLoop) + ".csv")
+    data = data.sample(frac=paramRandomRatio, random_state=104)
     realInitData = data
 
     # 검증할 데이터
@@ -34,234 +213,76 @@ def executeMD(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRati
     mod = sys.modules[__name__]
 
     # vLoop = 0
-    for vLoop in range(0, paramLoop):
-        # random으로 데이터 봅기
-        data = data.sample(frac=paramRandomRatio, random_state=104)
-        limitCnt = initDcnt * calcRatioLoop(data) * 0.01
-        print('limitCnt : ' + str(limitCnt))
-
-        # vLoop = 0
-        tmpDcnt = data['pur_gubn5'].value_counts()[0]
-        tmpBcnt = data['pur_gubn5'].value_counts()[1]
-
-        if tmpDcnt < 50:
-            break
-
-        ######################################################################################################################################
-        # 4레벨까지 원래 도는 부분
-        ######################################################################################################################################
-        # PICKLE FILE DELETE
-        md.createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
-        md.removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
-
-        lastFinal = lastFinal.append(
-            md.makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N'))
-
-        lastFinal = lastFinal.astype(
-            {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float', 'entr': 'float'})
-
-        lastFinal = lastFinal[lastFinal['condi'] != '']
-
-        tmpLoopFinal = tmpLoopFinal.append(lastFinal)
-
-        lastFinal['rDcnt'] = 0
-        lastFinal['rBcnt'] = 0
-        lastFinal['rDvsb'] = 0
-        lastFinal['vIndex'] = ''
-
-        # _com 데이터에서 만들어낸 조건들을 11year 데이터에 대입해본다.
-        for m in range(0, len(lastFinal)):
-            print(str(m) + ' / ' + str(len(lastFinal)) + lastFinal.iloc[m]['condi'])
-            lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = md.checkCondition(initData, lastFinal.iloc[m]['condi'])
-            lastFinal['rDcnt'].iloc[m] = lvdcnt
-            lastFinal['rBcnt'].iloc[m] = lvbcnt
-            lastFinal['rDvsb'].iloc[m] = lvdvsb
-            lastFinal['vIndex'].iloc[m] = lvindex
-
-        # loop 돌기 전 입력한 비율 값 보다 큰 rDcnt & rBcnt가 0인 조건을 만족하는 data만 빼낸다.
-        lastFinal = lastFinal[(lastFinal['rDcnt'] >= limitCnt) & (lastFinal['rBcnt'] < 1)]
-
-        data['delYn'] = 'N'
-
-        if len(lastFinal) > 0:
-            for z in range(0, len(lastFinal)):
-                try:
-                    # data = realInitData.drop(index=md.checkCondition(realInitData, lastFinal.iloc[z].condi)[0])
-                    data['delYn'].iloc[lastFinal['index'].iloc[l]] = 'Y'
-                except:
-                    pass
-        else:
-            break
-
-        data = data[data['delYn'] == 'N']
-
-    tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_result.csv")
-
-
-def executePM(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio):
-    ray.init(num_cpus=20, log_to_driver=False)
-    branch = 11
-
-    # 분석할 데이터
-    data = pd.read_csv(path + name + '_com.csv')
-
-    # 검증할 데이터
-    initData = pd.read_csv(path + name + '_11year.csv')
-
-    initBcnt = data['pur_gubn5'].value_counts()[1]
-    initDcnt = data['pur_gubn5'].value_counts()[0]
-    lastFinal = pd.DataFrame()
-    tmpFF = pd.DataFrame()
-    tmpLoopFinal = pd.DataFrame()
-    mod = sys.modules[__name__]
+    vLoop = paramLoop
+    # for vLoop in range(0, paramLoop):
+    # random으로 데이터 봅기
+    limitCnt = initDcnt * calcRatioLoop(data) * 0.01
+    print('limitCnt : ' + str(limitCnt))
 
     # vLoop = 0
-    for vLoop in range(0, paramLoop):
-        # random으로 데이터 봅기
-        # data = data.sample(frac=paramRandomRatio, random_state=104)
-        limitCnt = initDcnt * calcRatioLoop(data) * 0.01
-        print('limitCnt : ' + str(limitCnt))
+    tmpDcnt = data['pur_gubn5'].value_counts()[0]
+    tmpBcnt = data['pur_gubn5'].value_counts()[1]
 
-        # vLoop = 0
-        tmpDcnt = data['pur_gubn5'].value_counts()[0]
-        tmpBcnt = data['pur_gubn5'].value_counts()[1]
+    ######################################################################################################################################
+    # 4레벨까지 원래 도는 부분
+    ######################################################################################################################################
+    # PICKLE FILE DELETE
+    pmn.createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
+    pmn.removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
 
-        if tmpDcnt < 50:
-            break
+    lastFinal = lastFinal.append(
+        pmn.makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N', paramMemoryYn))
 
-        ######################################################################################################################################
-        # 4레벨까지 원래 도는 부분
-        ######################################################################################################################################
-        # PICKLE FILE DELETE
-        pm.createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
-        pm.removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
+    lastFinal = lastFinal.astype(
+        {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float', 'entr': 'float'})
 
-        lastFinal = lastFinal.append(
-            pm.makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N'))
+    lastFinal = lastFinal[lastFinal['condi'] != '']
 
-        lastFinal = lastFinal.astype(
-            {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float', 'entr': 'float'})
+    tmpLoopFinal = tmpLoopFinal.append(lastFinal)
 
-        lastFinal = lastFinal[lastFinal['condi'] != '']
+    lastFinal['rDcnt'] = 0
+    lastFinal['rBcnt'] = 0
+    lastFinal['rDvsb'] = 0
+    lastFinal['vIndex'] = ''
 
-        tmpLoopFinal = tmpLoopFinal.append(lastFinal)
+    # _com 데이터에서 만들어낸 조건들을 11year 데이터에 대입해본다.
+    for m in range(0, len(lastFinal)):
+        print(str(m) + ' / ' + str(len(lastFinal)) + lastFinal.iloc[m]['condi'])
+        lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = pmn.checkCondition(initData, lastFinal.iloc[m]['condi'])
+        lastFinal['rDcnt'].iloc[m] = lvdcnt
+        lastFinal['rBcnt'].iloc[m] = lvbcnt
+        lastFinal['rDvsb'].iloc[m] = lvdvsb
+        lastFinal['vIndex'].iloc[m] = lvindex
 
-        lastFinal['rDcnt'] = 0
-        lastFinal['rBcnt'] = 0
-        lastFinal['rDvsb'] = 0
-        lastFinal['vIndex'] = ''
+    # loop 돌기 전 입력한 비율 값 보다 큰 rDcnt & rBcnt가 0인 조건을 만족하는 data만 빼낸다.
+    lastFinal = lastFinal[(lastFinal['rDcnt'] >= limitCnt) & (lastFinal['rBcnt'] < 1)]
 
-        # _com 데이터에서 만들어낸 조건들을 11year 데이터에 대입해본다.
-        for m in range(0, len(lastFinal)):
-            print(str(m) + ' / ' + str(len(lastFinal)) + lastFinal.iloc[m]['condi'])
-            lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = pm.checkCondition(initData, lastFinal.iloc[m]['condi'])
-            lastFinal['rDcnt'].iloc[m] = lvdcnt
-            lastFinal['rBcnt'].iloc[m] = lvbcnt
-            lastFinal['rDvsb'].iloc[m] = lvdvsb
-            lastFinal['vIndex'].iloc[m] = lvindex
+    data['delYn'] = 'N'
 
-        # loop 돌기 전 입력한 비율 값 보다 큰 rDcnt & rBcnt가 0인 조건을 만족하는 data만 빼낸다.
-        lastFinal = lastFinal[(lastFinal['rDcnt'] >= limitCnt) & (lastFinal['rBcnt'] < 1)]
+    if len(lastFinal) > 0:
+        for z in range(0, len(lastFinal)):
+            try:
+                # data = realInitData.drop(index=pmn.checkCondition(realInitData, lastFinal.iloc[z].condi)[0])
+                data['delYn'].iloc[lastFinal['index'].iloc[z]] = 'Y'
+            except:
+                pass
+    else:
+        pass
 
-        data['delYn'] = 'N'
+    data = data[data['delYn'] == 'N']
 
-        if len(lastFinal) > 0:
-            for z in range(0, len(lastFinal)):
-                try:
-                    # data = realInitData.drop(index=pm.checkCondition(realInitData, lastFinal.iloc[z].condi)[0])
-                    data['delYn'].iloc[lastFinal['index'].iloc[l]] = 'Y'
-                except:
-                    pass
-        else:
-            break
+    try:
+        data.to_csv(
+            "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[PMN]" + name + "_com_loop" + vLoop + ".csv")
+    except:
+        pass
 
-        data = data[data['delYn'] == 'N']
+    try:
+        tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[PMN]" + name + "_result.csv")
+    except:
+        pass
 
-    tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_result.csv")
-
-
-def executePMN(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio):
-    ray.init(num_cpus=20, log_to_driver=False)
-    branch = 11
-
-    # 분석할 데이터
-    data = pd.read_csv(path + name + '_com.csv')
-    realInitData = data
-
-    # 검증할 데이터
-    initData = pd.read_csv(path + name + '_11year.csv')
-
-    initBcnt = data['pur_gubn5'].value_counts()[1]
-    initDcnt = data['pur_gubn5'].value_counts()[0]
-    lastFinal = pd.DataFrame()
-    tmpFF = pd.DataFrame()
-    tmpLoopFinal = pd.DataFrame()
-    mod = sys.modules[__name__]
-
-    # vLoop = 0
-    for vLoop in range(0, paramLoop):
-        # random으로 데이터 봅기
-        data = data.sample(frac=paramRandomRatio, random_state=104)
-        limitCnt = initDcnt * calcRatioLoop(data) * 0.01
-        print('limitCnt : ' + str(limitCnt))
-
-        # vLoop = 0
-        tmpDcnt = data['pur_gubn5'].value_counts()[0]
-        tmpBcnt = data['pur_gubn5'].value_counts()[1]
-
-        if tmpDcnt < 50:
-            break
-
-        ######################################################################################################################################
-        # 4레벨까지 원래 도는 부분
-        ######################################################################################################################################
-        # PICKLE FILE DELETE
-        pmn.createFolder("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
-        pmn.removeAllFile("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/" + name + 'New')
-
-        lastFinal = lastFinal.append(
-            pmn.makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N'))
-
-        lastFinal = lastFinal.astype(
-            {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float', 'entr': 'float'})
-
-        lastFinal = lastFinal[lastFinal['condi'] != '']
-
-        tmpLoopFinal = tmpLoopFinal.append(lastFinal)
-
-        lastFinal['rDcnt'] = 0
-        lastFinal['rBcnt'] = 0
-        lastFinal['rDvsb'] = 0
-        lastFinal['vIndex'] = ''
-
-        # _com 데이터에서 만들어낸 조건들을 11year 데이터에 대입해본다.
-        for m in range(0, len(lastFinal)):
-            print(str(m) + ' / ' + str(len(lastFinal)) + lastFinal.iloc[m]['condi'])
-            lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = pmn.checkCondition(initData, lastFinal.iloc[m]['condi'])
-            lastFinal['rDcnt'].iloc[m] = lvdcnt
-            lastFinal['rBcnt'].iloc[m] = lvbcnt
-            lastFinal['rDvsb'].iloc[m] = lvdvsb
-            lastFinal['vIndex'].iloc[m] = lvindex
-
-        # loop 돌기 전 입력한 비율 값 보다 큰 rDcnt & rBcnt가 0인 조건을 만족하는 data만 빼낸다.
-        lastFinal = lastFinal[(lastFinal['rDcnt'] >= limitCnt) & (lastFinal['rBcnt'] < 1)]
-
-        data['delYn'] = 'N'
-
-        if len(lastFinal) > 0:
-            for z in range(0, len(lastFinal)):
-                try:
-                    # data = realInitData.drop(index=pmn.checkCondition(realInitData, lastFinal.iloc[z].condi)[0])
-                    data['delYn'].iloc[lastFinal['index'].iloc[l]] = 'Y'
-                except:
-                    pass
-        else:
-            break
-
-        data = data[data['delYn'] == 'N']
-
-    tmpLoopFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_result.csv")
-
+    return initData, limitCnt
 
 def calcRatioLoop(data):
     df = data
@@ -295,8 +316,9 @@ if __name__ == '__main__':
     #####################################################################################################
     paramLevel = 8  # 초기 LEVEL수
     paramLastRatio = 2  # 마지막 레벨에서 dvsb가 x:1 이상인 것만 돌리게 하는 조건
-    paramLoop = 10  # loop Count Setting
+    paramLoop = 5  # loop Count Setting
     paramRandomRatio = 1  # 전체 data에서 random으로 뽑을 비율 (2022.06.15 Add)
+    paramMemoryYn = 'Y'   # Pickle파일을 메모리로 사용할 것인지 여부
     #####################################################################################################
 
     #####################################################################################################
@@ -306,11 +328,12 @@ if __name__ == '__main__':
     path = "C:/Users/Shine_anal/Desktop/inott/"  # 사용자 지정명 + _com.csv 파일이 존재하는 폴더 (분석할 csv파일)
 
     for paramName in name:
-        executeMD(paramName, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
-        executePM(paramName, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
-        executePMN(paramName, path, paramLevel, paramLastRatio, paramLoop, paramRandomRatio)
-        fResultMid = md.makeFinalSet(path, paramName, paramLastRatio, initData, limitCnt)
-        ray.shutdown()
+        for paramLoopDetail in range(0, paramLoop):
+            initDataMD, limitCntMD = executeMD(paramName, path, paramLevel, paramLastRatio, paramLoopDetail, paramRandomRatio, paramMemoryYn)
+            initDataPM, limitCntPM = executePM(paramName, path, paramLevel, paramLastRatio, paramLoopDetail, paramRandomRatio, paramMemoryYn)
+            initDataPMN, limitCntPMN = executePMN(paramName, path, paramLevel, paramLastRatio, paramLoopDetail, paramRandomRatio, paramMemoryYn)
+            fResultMid = md.makeFinalSet(path, paramName, paramLastRatio, initData, limitCnt)
+            ray.shutdown()
     #####################################################################################################
     # 최종결과파일명   사용자 지정 이름__ddelTreeLoopFinal_result.csv
     #####################################################################################################

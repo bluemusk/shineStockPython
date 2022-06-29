@@ -545,7 +545,7 @@ def entropy(target_col):
     return entropy
 
 def splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt):
-    df_split = np.array_split(data.iloc[:, 5:data.shape[1] - 2], 20, axis=1)
+    df_split = np.array_split(data[data.columns.difference(['pur_gubn5', 'delYn', 'yyyymmdd', 'stock_code', 'pur_gubn'])], 20, axis=1)
     tmp = [colValueCalc.remote(x, aggr_df) for x in df_split]
 
     result = pd.concat([ray.get(tmp)[0], ray.get(tmp)[1], ray.get(tmp)[2], ray.get(tmp)[3], ray.get(tmp)[4],
@@ -845,9 +845,10 @@ def dropCol(ckData, ckCond):
 
 # @profile
 def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum, lastLimitRatio,
-                  limitCnt, lastYn, initBranch, treeNm, loopCnt):
+                  limitCnt, lastYn, initBranch, treeNm, loopCnt, paramMemoryYn):
     # data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum, lastLimitRatio, limitCnt, lastYn, initBranch, treeNm = \
     #     tmp[3], tmp[2], i, tmp[4], prevBcnt, prevDcnt, trees.iloc[row].branch, name, paramLevel, j, paramLastRatio, limitCnt, lastYn, tmp[6], trees.iloc[row].treeNm
+    mod = sys.modules[__name__]
     initData = data
     initAggr = aggr_df
     tmpInvCon = ''
@@ -1068,8 +1069,8 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                       + '] lvl'
                       + str(lvl) + "_" + str(u)
                       + "\ndvsb : " + str(round(tmpExec['dvsb'], 2))
-                      + " / bcnt : " + str(int(tmpExec['bcnt']))
                       + " / dcnt : " + str(int(tmpExec['dcnt']))
+                      + " / bcnt : " + str(int(tmpExec['bcnt']))
                       + " / entropy : " + str(round(tmpEntr, 2))
                       + " / condition : " + condition)
 
@@ -1083,23 +1084,25 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                     (  # lvl3 ~ lvl5
                     lvl > 2 and lvl <= limitLvl - 3 and int(tmpExec['bcnt']) > 0.8
                     and tmpExec['dvsb'] > (prevDcnt / prevBcnt) and tmpExec['dcnt'] >= limitCnt
-                    ) or
-                    (
+                    ) or (
                     lvl == limitLvl - 2 and int(tmpExec['bcnt']) > 0.8
                     and tmpExec['dvsb'] > (prevDcnt / prevBcnt) and tmpExec['dcnt'] >= limitCnt and tmpExec[
-                        'bcnt'] >= 50
-                    ) or
-                    (
+                        'bcnt'] <= 40
+                    ) or (
                     lvl == limitLvl - 1 and int(tmpExec['bcnt']) > 0.8
-                    and tmpExec['dvsb'] >= 2.5 and tmpExec['dcnt'] >= limitCnt and tmpExec[
-                        'bcnt'] >= 50
+                    and tmpExec['dvsb'] >= 2.5 and tmpExec['dcnt'] >= limitCnt
                     ):
                     print('lvl_{}_{}.pkl'.format(lvl, u) + ' pickle file create')
-                    with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
-                              + name + 'New'
-                              + '/lvl_{}_{}.pkl'.format(lvl, u)
-                            , 'wb') as f:
-                        pickle.dump([tmpFinal, tmpBool, tmpAggr, tmpData, condition, tmpEntr, fBranch, tmpData.index], f)
+                    
+                    if paramMemoryYn == 'N':
+                        with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
+                                + name + 'New'
+                                + '/lvl_{}_{}.pkl'.format(lvl, u)
+                                , 'wb') as f:
+                            pickle.dump([tmpFinal, tmpBool, tmpAggr, tmpData, condition, tmpEntr, fBranch, tmpData.index],
+                                        f)
+                    else:
+                        setattr(mod, 'lvl_{}_{}'.format(lvl, u), [tmpFinal, tmpBool, tmpAggr, tmpData, condition, tmpEntr, fBranch, tmpData.index])
 
                 try:
                     fResultT = fResultT.append(
@@ -1121,43 +1124,16 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
                 if u % branch == 0 and tmpZeroCnt > 0:
                     tmpCountsDf = pd.DataFrame()
                     for p in range(branch * (lvlNum - 1) + 1, branch * lvlNum + 1):
-                        if os.path.isfile('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
-                              + name + 'New'
-                              + '/lvl_{}_{}.pkl'.format(lvl, p)):
-                            os.remove('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
-                              + name + 'New'
-                              + '/lvl_{}_{}.pkl'.format(lvl, p))
+                        if paramMemoryYn == 'N':
+                            if os.path.isfile('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
+                                + name + 'New'
+                                + '/lvl_{}_{}.pkl'.format(lvl, p)):
+                                os.remove('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/'
+                                + name + 'New'
+                                + '/lvl_{}_{}.pkl'.format(lvl, p))
+                        else:
+                            delattr(mod, 'lvl_{}_{}'.format(lvl, p))
 
-                    #     try:
-                    #         with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                    #                   + name + 'New' + "/lvl_{}_{}.pkl".format(lvl, p), "rb") as fr:
-                    #             tmp = pickle.load(fr)
-                    #
-                    #         try:
-                    #             tmpDcnt = tmp[2].value_counts()[0]
-                    #         except:
-                    #             tmpDcnt = 0.8
-                    #             pass
-                    #
-                    #         try:
-                    #             tmpBcnt = tmp[2].value_counts()[1]
-                    #         except:
-                    #             tmpBcnt = 0.8
-                    #             pass
-                    #
-                    #         tmpCountsDf = tmpCountsDf.append(pd.DataFrame([("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                    #                   + name + 'New' + "/lvl_{}_{}.pkl".format(lvl, p), tmpDcnt / tmpBcnt,
-                    #                                            tmpDcnt, tmpBcnt, tmp[1])], columns=['fileNm', 'dvsb', 'dcnt', 'bcnt', 'bool']))
-                    #     except:
-                    #         pass
-                    #
-                    # tmpCountsDf = tmpCountsDf.sort_values('dvsb', ascending=False)
-                    #
-                    # # 가지 내에 dvsb가 가장 좋은 녀석보다 작으면 삭제
-                    # for t in range(1, len(tmpCountsDf)):
-                    #     if tmpCountsDf.iloc[t]['dvsb'] < tmpCountsDf.iloc[0]['dvsb']:
-                    #         if os.path.isfile(tmpCountsDf.iloc[t]['fileNm']):
-                    #             os.remove(tmpCountsDf.iloc[t]['fileNm'])
         except Exception as e:
             # print(e)
             fResultT = fResultT.append(
@@ -1169,7 +1145,7 @@ def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch,
 
     return fResultT
 
-def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond, lastYn):
+def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond, lastYn, paramMemoryYn):
     # vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond, lastYn = 0, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N'
     tmpMkL = pd.DataFrame()
 
@@ -1185,10 +1161,14 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
     for row in range(0, trees.shape[0]):
         for i in range(0, paramLevel + 1):
             if i == 0:
-                ## Save pickle
-                with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/lvl_0_1.pkl',
-                          'wb') as f:
-                    pickle.dump(['', '', data['pur_gubn5'], data, initCond, entropy(data['pur_gubn5']), '', data.index], f)
+                if paramMemoryYn == 'N':
+                    ## Save pickle
+                    with open('C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/lvl_0_1.pkl',
+                            'wb') as f:
+                        pickle.dump(['', '', data['pur_gubn5'], data, initCond, entropy(data['pur_gubn5']), '', data.index], f)
+                else:
+                    mod = sys.modules[__name__]
+                    setattr(mod, 'lvl_0_1', ['', '', data['pur_gubn5'], data, initCond, entropy(data['pur_gubn5']), '', data.index])
 
             else:
                 leaf = trees.iloc[row].branch ** (i - 1)
@@ -1205,121 +1185,13 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
                     prevDcnt = 0.8
                     tmp = pd.DataFrame()
 
-                    # # 7레벨 시작 전 가망 없는 애들은 정리하고 시작
-                    # if i == 7 and j == 1:
-                    #     delFile = tmpMkL[tmpMkL['bcnt'] > 50].str.contains('lvl_7')]
-                    #
-                    #     for h in range(0, len(delFile)):
-                    #         if os.path.isfile(
-                    #                 'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/{}.pkl'.format(
-                    #                     delFile['lvl'].iloc[h])):
-                    #             os.remove(
-                    #                 'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/{}.pkl'.format(
-                    #                     delFile['lvl'].iloc[h]))
-
-                    # import pandas as pd
-                    # name = 'kbuy2'  # 사용자 지정 명
-                    # path = "C:/Users/Shine_anal/Desktop/inott/"  # 사용자 지정명 + _com.csv 파일이 존재하는 폴더 (분석할 csv파일)
-                    # 분석할 데이터
-                    # data = pd.read_csv(path + name + '_com.csv')
-                    # data = data.sample(frac=0.8, random_state=104)
-                    # tmpMkL = pd.read_csv(
-                    #     "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[Loop - 0][tree1]kbuy2_result.csv")
-                    # tmpMkL = tmpMkL[~tmpMkL['lvl'].str.contains('lvl_7')]
-                    # tmpMkL = tmpMkL[~tmpMkL['lvl'].str.contains('lvl_8')]
-                    # limitCnt = 10
-
-
-                    # 7레벨 시작 전 가망 없는 애들은 정리하고 시작
-                    # if i == 7 and j == 1:
-                    #     # realFinal을 dvsb 내림차순으로 정렬
-                    #     tmpSevenLvlSet = tmpMkL
-                    #     tmpSevenData = data
-                    #     tmpSevenLvlSet['index'] = ''
-                    #     tmpSevenLvlSet['delYn'] = 'N'
-
-                    #     # 각 조건 별로 bcnt, dcnt, dvsb를 다시 계산
-                    #     # y=2
-                    #     try:
-                    #         for y in range(0, len(tmpSevenLvlSet)):
-                    #             print(
-                    #                 '######################################################################################################################################')
-                    #             print('lvl6 After Check - ' + str(y))
-                    #             print(
-                    #                 '######################################################################################################################################')
-                    #             tmpSevenLvlSet = tmpSevenLvlSet.astype(
-                    #                 {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float',
-                    #                  'entr': 'float'})
-
-                    #             if tmpSevenLvlSet['delYn'].iloc[y] == 'N':
-                    #                 tmpDelPickle = pd.DataFrame()
-
-                    #                 for x in range(0, len(tmpSevenLvlSet)):
-                    #                     # limitCnt 보다 큰 녀석들 중 dvsb가 가장 큰 녀석을 뽑고 데이터도 빼낸다.
-                    #                     lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = checkCondition(tmpSevenData,
-                    #                                                                              tmpSevenLvlSet.iloc[
-                    #                                                                                  x][
-                    #                                                                                  'condi'])
-                    #                     tmpSevenLvlSet['index'].iloc[x] = lvindex
-                    #                     tmpSevenLvlSet['dcnt'].iloc[x] = lvdcnt
-                    #                     tmpSevenLvlSet['bcnt'].iloc[x] = lvbcnt
-                    #                     tmpSevenLvlSet['dvsb'].iloc[x] = lvdvsb
-
-                    #                     print(str(x) + ' / ' + str(
-                    #                         len(tmpSevenLvlSet)) + ' - lvl6 After - ' + str(
-                    #                         y) + ' - dcnt : ' + str(lvdcnt) + ' / bcnt : ' + str(
-                    #                         lvbcnt) + ' / dvsb : ' + str(lvdvsb))
-
-                    #                 # 전부 대입해서 가장 좋은 조건의 데이터를 빼낸다음 dcnt는 0이고 bcnt는 0보다 큰 녀석들의 피클파일을 삭제한다.
-                    #                 # dcnt == 0 and bcnt > 0 인 피클 파일을 삭제한다..
-                    #                 tmpDelPickle = tmpSevenLvlSet[
-                    #                     (tmpSevenLvlSet['dcnt'] < 1) & (tmpSevenLvlSet['bcnt'] > 0.8)]
-                    #                 # dvsb가 0.62보다작거나 limitCnt보다 작은 녀석들의 pickle을 삭제한다.
-                    #                 tmpDelPickle = tmpDelPickle.append(tmpSevenLvlSet[(
-                    #                                                                    tmpSevenLvlSet[
-                    #                                                                        'dcnt'] < limitCnt)])
-
-                    #                 if len(tmpDelPickle) > 0:
-                    #                     for h in range(0, len(tmpDelPickle)):
-                    #                         if os.path.isfile(
-                    #                                 'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/{}.pkl'.format(
-                    #                                     tmpDelPickle['lvl'].iloc[h])):
-                    #                             os.remove(
-                    #                                 'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/{}.pkl'.format(
-                    #                                     tmpDelPickle['lvl'].iloc[h]))
-
-                    #                             tmpSevenLvlSet['delYn'][
-                    #                                 tmpSevenLvlSet['lvl'] == tmpDelPickle['lvl'].iloc[
-                    #                                     h]] = 'Y'
-
-                    #                             print(
-                    #                                 'C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/' + name + 'New' + '/{}.pkl'.format(
-                    #                                     tmpDelPickle['lvl'].iloc[h]) + ' - Delete')
-
-                    #                 ################################################################################################################
-                    #                 # tmpSevenLvlSet을 dvsb 내림차순으로 정렬
-                    #                 tmpSevenLvlSet = tmpSevenLvlSet.sort_values('dvsb', ascending=False)
-
-                    #                 tmpSevenLvlSet = tmpSevenLvlSet[
-                    #                     (tmpSevenLvlSet['dvsb'] >= 0.62) & (tmpSevenLvlSet['dcnt'] >= limitCnt)]
-
-                    #                 # 가장 좋은 비율의 조건을 'Y' 표기
-                    #                 tmpSevenLvlSet['delYn'].iloc[0] = 'Y'
-
-                    #                 # dvsb가 가장 좋은 조건의 데이터를 빼낸다
-                    #                 try:
-                    #                     tmpSevenData = tmpSevenData.drop(index=tmpSevenLvlSet.iloc[0]['index'])
-                    #                 except:
-                    #                     pass
-
-                    #     except Exception as e:
-                    #         print(e)
-                    #         pass
-
                     try:
-                        with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
-                                  + name + 'New' + "/lvl_{}_{}.pkl".format(i - 1, j), "rb") as fr:
-                            tmp = pickle.load(fr)
+                        if paramMemoryYn == 'N':
+                            with open("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/"
+                                    + name + 'New' + "/lvl_{}_{}.pkl".format(i - 1, j), "rb") as fr:
+                                tmp = pickle.load(fr)
+                        else:
+                            tmp = getattr(mod, 'lvl_{}_{}'.format(i - 1, j))
                     except Exception as e:
                         tmp = pd.DataFrame()
                         # print(e)
@@ -1354,7 +1226,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
                                                   name,
                                                   paramLevel, j,
                                                   paramLastRatio, limitCnt, lastYn, tmp[6], trees.iloc[row].treeNm,
-                                                  vLoop)
+                                                  vLoop, paramMemoryYn)
                             tmpMkL = tmpMkL.append(tmpFF)
 
                         try:
