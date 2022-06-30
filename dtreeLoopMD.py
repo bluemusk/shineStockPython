@@ -538,7 +538,6 @@ def colValueCalc(col, aggr_df):
 
     return rtnDf
 
-
 def entropy(target_col):
     elements, counts = np.unique(target_col, return_counts=True)
     entropy = -np.sum(
@@ -595,7 +594,6 @@ def splitData(data, aggr_df, prevBcnt, prevDcnt, limitCnt):
 
     return tmpFinal
 
-
 def changeCondition(origin):
     origin = origin.split(' ')
     mod = ''
@@ -648,7 +646,6 @@ def checkConditionCnt(data, condition):
 
     return print(data.value_counts('pur_gubn5'))
 
-
 def exceptColumn(data, expCondi):
     try:
         for i in range(0, expCondi.shape[0]):
@@ -663,7 +660,6 @@ def exceptColumn(data, expCondi):
 
     return data
 
-
 def removeAllFile(directory):
     if os.path.exists(directory):
         for file in os.scandir(directory):
@@ -677,7 +673,6 @@ def createFolder(directory):
     except OSError:
         print('Error: Creating directory. ' + directory)
         pass
-
 
 @ray.remote
 def chkEndBranch(condi, data):
@@ -716,11 +711,47 @@ def calcRatioDf(paramData):
 
     return paramLimitRatio
 
-def makeFinalSet(path, name, lastRatio, initData, limitCnt):
+def calcRatioLoop(data):
+    df = data
+
+    if df.value_counts('pur_gubn5')[0] >= 8000:
+        paramLimitRatio = 0.1  # 초기데이터 중 dcnt대비
+    elif df.value_counts('pur_gubn5')[0] >= 3500:
+        paramLimitRatio = 0.2  # 초기데이터 중 dcnt대비
+    elif df.value_counts('pur_gubn5')[0] >= 2500 and df.value_counts('pur_gubn5')[0] <= 3499:
+        paramLimitRatio = 0.3  # 초기데이터 중 dcnt대비
+    elif df.value_counts('pur_gubn5')[0] >= 1500 and df.value_counts('pur_gubn5')[0] <= 2499:
+        paramLimitRatio = 0.4  # 초기데이터 중 dcnt대비
+    elif df.value_counts('pur_gubn5')[0] >= 900 and df.value_counts('pur_gubn5')[0] <= 1499:
+        paramLimitRatio = 0.7  # 초기데이터 중 dcnt대비
+    elif df.value_counts('pur_gubn5')[0] >= 600 and df.value_counts('pur_gubn5')[0] <= 899:
+        paramLimitRatio = 0.9  # 초기데이터 중 dcnt대비
+    elif df.value_counts('pur_gubn5')[0] >= 400 and df.value_counts('pur_gubn5')[0] <= 599:
+        paramLimitRatio = 1.2  # 초기데이터 중 dcnt대비
+    elif df.value_counts('pur_gubn5')[0] >= 250 and df.value_counts('pur_gubn5')[0] <= 399:
+        paramLimitRatio = 1.5  # 초기데이터 중 dcnt대비
+    elif df.value_counts('pur_gubn5')[0] >= 50 and df.value_counts('pur_gubn5')[0] <= 249:
+        paramLimitRatio = 2.2  # 초기데이터 중 dcnt대비
+
+    return paramLimitRatio
+
+def makeFinalSet(path, name, paramLoop):
     # 결과 합치기
     # import pandas as pd
+    # import os
+    # name = 'kbuy2'
+    # paramLoop = 0
+    # path = "C:/Users/Shine_anal/Desktop/inott/"
+    if paramLoop == 0:
+        data = pd.read_csv(path + name + '_com.csv')
+    else:
+        data = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_com_loop" + str(paramLoop) + ".csv")
+    
+    # 검증할 데이터
+    initData = pd.read_csv(path + name + '_11year.csv')
+    
     lists = os.listdir("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/")
-    file_list_rslt = [file for file in lists if file.endswith("_result.csv") and file.find(name) > 0 and file.find('[MD]') > 0]
+    file_list_rslt = [file for file in lists if file.endswith("_result.csv") and file.find(name) > 0 and file.find(str(paramLoop) + ']') > 0]
 
     # 결과 합치기
     fResultMid = pd.DataFrame()
@@ -731,26 +762,11 @@ def makeFinalSet(path, name, lastRatio, initData, limitCnt):
         fResultMid = fResultMid.append(tmp)
         print('------------------------------- / ' + file_list_rslt[i])
         print(fResultMid.value_counts('tree'))
-        # import pandas as pd
-        # tmp = pd.read_csv("C:/Users/Shine_anal/Desktop/inott/kbuy2_ddelTreeLoopFinal_result_20220620212411.csv")
-
-    # tmp = tmp.sort_values('dvsb', ascending=False)
-    # fResultMid = tmp
-    # fResultMid.value_counts('tree')
-    # tmpL = fResultMid['condi'].drop_duplicates()  # 중복조건 제거
-    # fResultMid = fResultMid.iloc[tmpL.index]
-    # fResultMid = fResultMid.iloc[:, 2:fResultMid.shape[1]].drop_duplicates()
 
     fResultMid = fResultMid.sort_values('dvsb', ascending=False)  # dvsb가 좋은 순서로 정렬
-    # fResultMid = fResultMid.dropna(axis=0)
-    # fResultMid['chk'] = 0
 
-    # fResultMid.value_counts('tree')
-    # import ray
-    # import numpy as np
-    # fResultMid = fResultMid[1:100]
-    # limitCnt = 10
-    fResultMid = fResultMid[fResultMid['dvsb'] >= limitCnt]
+    limitCnt = data.value_counts('pur_gubn5')[0] * calcRatioLoop(data) * 0.01
+    fResultMid = fResultMid[fResultMid['dvsb'] > limitCnt - 2]
     fResultMid = fResultMid.sort_values('dvsb', ascending=False)
     fResultMid = fResultMid.drop_duplicates()
 
@@ -758,7 +774,7 @@ def makeFinalSet(path, name, lastRatio, initData, limitCnt):
     fResultMid['rBcnt'] = 0
     fResultMid['rDvsb'] = 0
     fResultMid['vIndex'] = ''
-
+    
     # 최종 11년 데이터에 넣어서 비율을 다시 구한다.
     for m in range(0, len(fResultMid)):
         lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = checkCondition(initData, fResultMid.iloc[m]['condi'])
@@ -768,9 +784,24 @@ def makeFinalSet(path, name, lastRatio, initData, limitCnt):
         fResultMid['rDvsb'].iloc[m] = lvdvsb
         fResultMid['vIndex'].iloc[m] = lvindex
 
+        # lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = checkCondition(data, fResultMid.iloc[m]['condi'])
+        # fResultMid['index'].iloc[m] = lvindex
+    
     # limitCnt = 10
     # 결과 중 rBcnt 0인 애들을 모은 후 삭제
     fResultFin = fResultFin.append(fResultMid[(fResultMid['rBcnt'] < 1) & (fResultMid['rDcnt'] >= limitCnt)])
+
+    data['delYn'] = 'N'
+
+    if len(fResultFin) > 0:
+        for z in range(0, len(fResultFin)):
+            # z=0
+            try:
+                data['delYn'].iloc[fResultFin['index'].iloc[z]] = 'Y'
+            except:
+                pass
+    # data.value_counts('pur_gubn5')
+    data = data[data['delYn'] == 'N']
 
     initData['delYn'] = 'N'
 
@@ -779,6 +810,8 @@ def makeFinalSet(path, name, lastRatio, initData, limitCnt):
         initData['delYn'].iloc[fResultFin['vIndex'].iloc[l]] = 'Y'
 
     initData = initData[initData['delYn'] == 'N']
+
+    data.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_com_loop" + str(paramLoop) + ".csv")
 
     fResultMid = fResultMid[(fResultMid['rBcnt'] > 0.8) & (fResultMid['rDcnt'] >= limitCnt)]
 
@@ -793,11 +826,9 @@ def makeFinalSet(path, name, lastRatio, initData, limitCnt):
             fResultFin = fResultFin.append(fResultMid.iloc[h])
 
     fResultFin = fResultFin.sort_values('rDvsb', ascending=False)  # dvsb가 좋은 순서로 정렬
-    fResultFin.to_csv(path + name + "_ddelTreeLoopFinal_result_{}.csv".format(datetime.datetime.today().strftime(
-        "%Y%m%d%H%M%S")))
+    fResultFin.to_csv(path + '[Loop - {}]' + name + "_ddelTreeLoopFinal_result.csv".format(paramLoop))
 
     return fResultFin
-
 
 def checkCondition(ckData, ckCond):
     # ckData, ckCond = lvl4Data, realFinal.iloc[0]['condi']
@@ -853,7 +884,6 @@ def checkCondition(ckData, ckCond):
 
     return ckData.index, dcnt, bcnt, dcnt / bcnt, ckData
 
-
 def dropCol(ckData, ckCond):
     ckCond = pd.DataFrame(ckCond.split(' AND '))
 
@@ -878,8 +908,6 @@ def dropCol(ckData, ckCond):
 
     return ckData
 
-
-# @profile
 def conditionMake(data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum, lastLimitRatio,
                   limitCnt, lastYn, initBranch, treeNm, loopCnt, paramMemoryYn):
     # data, aggr_df, lvl, initCondition, prevBcnt, prevDcnt, branch, name, limitLvl, lvlNum, lastLimitRatio, limitCnt, lastYn, initBranch, treeNm = \
