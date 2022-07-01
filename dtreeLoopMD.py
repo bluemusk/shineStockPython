@@ -740,18 +740,18 @@ def makeFinalSet(path, name, paramLoop):
     # import pandas as pd
     # import os
     # name = 'kbuy2'
-    # paramLoop = 0
+    # paramLoop = 1
     # path = "C:/Users/Shine_anal/Desktop/inott/"
     if paramLoop == 0:
         data = pd.read_csv(path + name + '_com.csv')
     else:
-        data = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_com_loop" + str(paramLoop) + ".csv")
+        data = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_com_loop" + str(paramLoop - 1) + ".csv")
     
     # 검증할 데이터
     initData = pd.read_csv(path + name + '_11year.csv')
     
     lists = os.listdir("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/")
-    file_list_rslt = [file for file in lists if file.endswith("_result.csv") and file.find(name) > 0 and file.find(str(paramLoop) + ']') > 0]
+    file_list_rslt = [file for file in lists if file.startswith("loopFinal_") and file.find(name) > 0]
 
     # 결과 합치기
     fResultMid = pd.DataFrame()
@@ -816,7 +816,7 @@ def makeFinalSet(path, name, paramLoop):
     fResultMid = fResultMid[(fResultMid['rBcnt'] > 0.8) & (fResultMid['rDcnt'] >= limitCnt)]
 
     # 마지막 루프 돌때 마지막 루프에서 계산된 리미트 카운트보다 큰 녀석들 중 바이가 0인 애들을 모아서 원래 11년 데이터에서 빼낸 후
-    # 바이가 0인 애들을 제외한 조건들을 전부다 다시 대입하여 dvsb가 3 이상인 녀석들은 추가시켜서 최종 결과를 만들어낸다..
+    # 바이가 0인 애들을 제외한 조건들을 전부다 다시 대입하여 dvsb가 2 이상인 녀석들은 추가시켜서 최종 결과를 만들어낸다..
     for h in range(0, len(fResultMid)):
         lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = checkCondition(initData, fResultMid.iloc[h]['condi'])
         print(str(h) + ' / ' + str(len(fResultMid)) + ' / originalDvsb : ' + str(
@@ -826,7 +826,7 @@ def makeFinalSet(path, name, paramLoop):
             fResultFin = fResultFin.append(fResultMid.iloc[h])
 
     fResultFin = fResultFin.sort_values('rDvsb', ascending=False)  # dvsb가 좋은 순서로 정렬
-    fResultFin.to_csv(path + '[Loop - {}]' + name + "_ddelTreeLoopFinal_result.csv".format(paramLoop))
+    fResultFin.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + '[Final]' + name + "_result_{}_loop.csv".format(str(paramLoop)))
 
     return fResultFin
 
@@ -1580,10 +1580,10 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
     # vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond, lastYn = 0, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N'
     tmpMkL = pd.DataFrame()
 
-    trees = pd.DataFrame([('tree1', 4)], columns=('treeNm', 'branch'))
+    trees = pd.DataFrame([('tree3', 4)], columns=('treeNm', 'branch'))
     # trees = pd.DataFrame([('tree4', 4)], columns=('treeNm', 'branch'))
-    trees = trees.append(pd.DataFrame([('tree2', 4)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree3', 4)], columns=('treeNm', 'branch')))
+    # trees = trees.append(pd.DataFrame([('tree2', 4)], columns=('treeNm', 'branch')))
+    # trees = trees.append(pd.DataFrame([('tree3', 4)], columns=('treeNm', 'branch')))
     trees = trees.append(pd.DataFrame([('tree4', 4)], columns=('treeNm', 'branch')))
     trees = trees.append(pd.DataFrame([('tree5', 4)], columns=('treeNm', 'branch')))
     trees = trees.append(pd.DataFrame([('tree6', 2)], columns=('treeNm', 'branch')))

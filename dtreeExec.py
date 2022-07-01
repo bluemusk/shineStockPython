@@ -51,7 +51,13 @@ def executeMD(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRati
     if paramLoop == 0:
         data = pd.read_csv(path + name + '_com.csv')
     else:
-        data = ("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_com_loop" + str(paramLoop - 1) + ".csv")
+        data = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_com_loop" + str(paramLoop - 1) + ".csv")
+
+    for i in range(len(data.columns)):
+        if data.columns[i] == 'yyyymmdd':
+            stopCol = i
+
+    data = data.iloc[:, stopCol:]
     # startLoopNum = 0
     realInitData = data
 
@@ -89,7 +95,7 @@ def executeMD(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRati
     lastFinal = lastFinal.append(
         md.makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N', paramMemoryYn))
 
-    lastFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[MD]" + name + "_com_loop" + str(vLoop) + ".csv")
+    lastFinal.to_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/loopFinal_[MD]" + name + "_com_loop" + str(vLoop) + ".csv")
     # data.value_counts('pur_gubn5')
 
     return lastFinal
@@ -102,7 +108,13 @@ def executePM(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRati
     if paramLoop == 0:
         data = pd.read_csv(path + name + '_com.csv')
     else:
-        data = ("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_com_loop" + str(paramLoop - 1) + ".csv")
+        data = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_com_loop" + str(paramLoop - 1) + ".csv")
+
+    for i in range(len(data.columns)):
+        if data.columns[i] == 'yyyymmdd':
+            stopCol = i
+
+    data = data.iloc[:, stopCol:]
 
     data = data.sample(frac=paramRandomRatio, random_state=104)
     # 검증할 데이터
@@ -138,7 +150,7 @@ def executePM(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRati
         pm.makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N', paramMemoryYn))
 
     lastFinal.to_csv(
-        "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[PM]" + name + "_com_loop" + str(vLoop) + ".csv")
+        "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/loopFinal_[PM]" + name + "_com_loop" + str(vLoop) + ".csv")
     # data.value_counts('pur_gubn5')
 
     return lastFinal
@@ -151,7 +163,13 @@ def executePMN(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRat
     if paramLoop == 0:
         data = pd.read_csv(path + name + '_com.csv')
     else:
-        data = ("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_com_loop" + str(paramLoop - 1) + ".csv")
+        data = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + name + "_com_loop" + str(paramLoop - 1) + ".csv")
+
+    for i in range(len(data.columns)):
+        if data.columns[i] == 'yyyymmdd':
+            stopCol = i
+
+    data = data.iloc[:, stopCol:]
 
     data = data.sample(frac=paramRandomRatio, random_state=104)
     realInitData = data
@@ -191,9 +209,25 @@ def executePMN(name, path, paramLevel, paramLastRatio, paramLoop, paramRandomRat
         {'dcnt': 'int', 'bcnt': 'int', 'bvsd': 'float', 'dvsb': 'float', 'entr': 'float'})
 
     lastFinal.to_csv(
-            "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[PMN]" + name + "_com_loop" + str(vLoop) + ".csv")
+            "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/loopFinal_[PMN]" + name + "_com_loop" + str(vLoop) + ".csv")
 
     return lastFinal
+
+def makeFinalResult():
+    lists = os.listdir("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/")
+    file_list_rslt = [file for file in lists if file.startswith('[Final]' + name)]
+
+    # 결과 합치기
+    fResultMid = pd.DataFrame()
+
+    for i in range(0, len(file_list_rslt)):
+        # print("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + file_list_rslt[i])
+        tmp = pd.read_csv("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/" + file_list_rslt[i])
+        fResultMid = fResultMid.append(tmp)
+        print('------------------------------- / ' + file_list_rslt[i])
+
+    fResultMid.to_csv(path + name + "_ddelTreeLoopFinal_result_{}.csv".format(datetime.datetime.today().strftime(
+                        "%Y%m%d%H%M%S")))
 
 if __name__ == '__main__':
     #####################################################################################################
@@ -202,7 +236,7 @@ if __name__ == '__main__':
     #####################################################################################################
     paramLevel = 8  # 초기 LEVEL수
     paramLastRatio = 2  # 마지막 레벨에서 dvsb가 x:1 이상인 것만 돌리게 하는 조건
-    paramLoop = 7  # loop Count Setting
+    paramLoop = 5  # loop Count Setting
     paramRandomRatio = 1  # 전체 data에서 random으로 뽑을 비율 (2022.06.15 Add)
     paramMemoryYn = 'Y'   # Pickle파일을 메모리로 사용할 것인지 여부
     #####################################################################################################
@@ -210,8 +244,9 @@ if __name__ == '__main__':
     #####################################################################################################
     # name = 'kbuy2'
     #####################################################################################################
-    # name = ['sjtabuy', 'ncbuy2', 'ncbuy3', 'kbuy1', 'kbuy2' , 'sbuy2', 'sbuy3']  # 사용자 지정 명
-    name = ['kbuy2','sjtabuy', 'ncbuy2', 'ncbuy3', 'kbuy1',  'sbuy2', 'sbuy3']  # 사용자 지정 명
+    name = ['sjtabuy', 'ncbuy2', 'ncbuy3', 'kbuy1', 'kbuy2' , 'sbuy2', 'sbuy3']  # 사용자 지정 명
+    # name=['kbuy2']
+    # name = ['kbuy2','sjtabuy', 'ncbuy2', 'ncbuy3', 'kbuy1',  'sbuy2', 'sbuy3']  # 사용자 지정 명
     path = "C:/Users/Shine_anal/Desktop/inott/"  # 사용자 지정명 + _com.csv 파일이 존재하는 폴더 (분석할 csv파일)
     
     ray.shutdown()
@@ -225,6 +260,9 @@ if __name__ == '__main__':
             ray.shutdown()
             fResultMid = md.makeFinalSet(path, paramName, paramLoopDetail)
             ray.shutdown()
+        
+        makeFinalResult()
+    
     #####################################################################################################
     # 최종결과파일명   사용자 지정 이름__ddelTreeLoopFinal_result.csv
     #####################################################################################################

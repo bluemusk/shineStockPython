@@ -1067,14 +1067,14 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
     # vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond, lastYn = 0, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N'
     tmpMkL = pd.DataFrame()
 
-    trees = pd.DataFrame([('tree1', 2)], columns=('treeNm', 'branch'))
-    trees = trees.append(pd.DataFrame([('tree2', 2)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree3', 2)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree4', 2)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree5', 2)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree6', 2)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree7', 2)], columns=('treeNm', 'branch')))
-    trees = trees.append(pd.DataFrame([('tree8', 2)], columns=('treeNm', 'branch')))
+    trees = pd.DataFrame([('tree8', 2)], columns=('treeNm', 'branch'))
+    # trees = trees.append(pd.DataFrame([('tree2', 2)], columns=('treeNm', 'branch')))
+    # trees = trees.append(pd.DataFrame([('tree3', 2)], columns=('treeNm', 'branch')))
+    # trees = trees.append(pd.DataFrame([('tree4', 2)], columns=('treeNm', 'branch')))
+    # trees = trees.append(pd.DataFrame([('tree5', 2)], columns=('treeNm', 'branch')))
+    # trees = trees.append(pd.DataFrame([('tree6', 2)], columns=('treeNm', 'branch')))
+    # trees = trees.append(pd.DataFrame([('tree7', 2)], columns=('treeNm', 'branch')))
+    # trees = trees.append(pd.DataFrame([('tree8', 2)], columns=('treeNm', 'branch')))
     # row,i,j = 0,1,1
     for row in range(0, trees.shape[0]):
         for i in range(0, paramLevel + 1):
