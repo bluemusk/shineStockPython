@@ -688,35 +688,74 @@ def chkEndBranch(condi, data):
 def checkCondition(ckData, ckCond):
     # ckData, ckCond = lvl4Data, realFinal.iloc[0]['condi']
     try:
+        ckCond = ckCond.replace('(','')
+        ckCond = ckCond.replace(')', '')
         ckCond = pd.DataFrame(ckCond.split(' AND '))
 
         for i in range(0, ckCond.shape[0]):
-            if ckCond.iloc[i, 0].find('<=') > 0:
-                con = ckCond.iloc[i, 0].split('<=')[0]
-                con = str(con).replace(' ', '')
+            # print(str(i))
+            if ckCond.iloc[i, 0].find(' OR ') < 0:
+                if ckCond.iloc[i, 0].find('<=') > 0:
+                    con = ckCond.iloc[i, 0].split('<=')[0]
+                    con = str(con).replace(' ', '')
 
-                try:
-                    val = float(ckCond.iloc[i, 0].split('<=')[1])
-                    ckData = ckData[ckData[con] <= val]
-                except Exception as e:
-                    val = ckCond.iloc[i, 0].split('<=')[1]
-                    val = str(val).replace(' ', '')
-                    ckData = ckData[ckData[con] <= ckData[val]]
-                    pass
+                    try:
+                        val = float(ckCond.iloc[i, 0].split('<=')[1])
+                        ckData = ckData[ckData[con] <= val]
+                    except Exception as e:
+                        val = ckCond.iloc[i, 0].split('<=')[1]
+                        val = str(val).replace(' ', '')
+                        ckData = ckData[ckData[con] <= ckData[val]]
+                        print(e)
+                        pass
 
+                else:
+                    con = ckCond.iloc[i, 0].split('>')[0]
+                    con = str(con).replace(' ', '')
+
+                    try:
+                        val = float(ckCond.iloc[i, 0].split('>')[1])
+                        ckData = ckData[ckData[con] > val]
+                    except Exception as e:
+                        val = ckCond.iloc[i, 0].split('>')[1]
+                        val = str(val).replace(' ', '')
+                        ckData = ckData[ckData[con] > ckData[val]]
+                        print(e)
+                        pass
             else:
-                con = ckCond.iloc[i, 0].split('>')[0]
-                con = str(con).replace(' ', '')
+                ckCondOr = pd.DataFrame(ckCond.iloc[i, 0].split(' OR '))
+                tmpOrData = pd.DataFrame()
 
-                try:
-                    val = float(ckCond.iloc[i, 0].split('>')[1])
-                    ckData = ckData[ckData[con] > val]
-                except Exception as e:
-                    val = ckCond.iloc[i, 0].split('>')[1]
-                    val = str(val).replace(' ', '')
-                    ckData = ckData[ckData[con] > ckData[val]]
-                    pass
+                for x in range(0, ckCondOr.shape[0]):
+                    if ckCond.iloc[x, 0].find('<=') > 0:
+                        con = ckCond.iloc[x, 0].split('<=')[0]
+                        con = str(con).replace(' ', '')
 
+                        try:
+                            val = float(ckCond.iloc[x, 0].split('<=')[1])
+                            tmpOrData = tmpOrData.append(ckData[ckData[con] <= val])
+                        except Exception as e:
+                            val = ckCond.iloc[x, 0].split('<=')[1]
+                            val = str(val).replace(' ', '')
+                            tmpOrData = tmpOrData.append(ckData[ckData[con] <= ckData[val]])
+                            print(e)
+                            pass
+
+                    else:
+                        con = ckCond.iloc[x, 0].split('>')[0]
+                        con = str(con).replace(' ', '')
+
+                        try:
+                            val = float(ckCond.iloc[x, 0].split('>')[1])
+                            tmpOrData = tmpOrData.append(ckData[ckData[con] > val])
+                        except Exception as e:
+                            val = ckCond.iloc[x, 0].split('>')[1]
+                            val = str(val).replace(' ', '')
+                            tmpOrData = tmpOrData.append(ckData[ckData[con] > ckData[val]])
+                            print(e)
+                            pass
+                tmpOrData = tmpOrData.drop_duplicates()
+                ckData = tmpOrData
     except:
         ckData = pd.DataFrame()
         pass
@@ -1067,14 +1106,14 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
     # vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond, lastYn = 0, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N'
     tmpMkL = pd.DataFrame()
 
-    trees = pd.DataFrame([('tree8', 2)], columns=('treeNm', 'branch'))
-    # trees = trees.append(pd.DataFrame([('tree2', 2)], columns=('treeNm', 'branch')))
-    # trees = trees.append(pd.DataFrame([('tree3', 2)], columns=('treeNm', 'branch')))
-    # trees = trees.append(pd.DataFrame([('tree4', 2)], columns=('treeNm', 'branch')))
-    # trees = trees.append(pd.DataFrame([('tree5', 2)], columns=('treeNm', 'branch')))
-    # trees = trees.append(pd.DataFrame([('tree6', 2)], columns=('treeNm', 'branch')))
-    # trees = trees.append(pd.DataFrame([('tree7', 2)], columns=('treeNm', 'branch')))
-    # trees = trees.append(pd.DataFrame([('tree8', 2)], columns=('treeNm', 'branch')))
+    trees = pd.DataFrame([('tree1', 2)], columns=('treeNm', 'branch'))
+    trees = trees.append(pd.DataFrame([('tree2', 2)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree3', 2)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree4', 2)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree5', 2)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree6', 2)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree7', 2)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree8', 2)], columns=('treeNm', 'branch')))
     # row,i,j = 0,1,1
     for row in range(0, trees.shape[0]):
         for i in range(0, paramLevel + 1):

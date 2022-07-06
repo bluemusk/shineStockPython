@@ -750,8 +750,9 @@ def makeFinalSet(path, name, paramLoop):
     # 검증할 데이터
     initData = pd.read_csv(path + name + '_11year.csv')
     
+    loopStr = "loop{}.csv".format(str(paramLoop))
     lists = os.listdir("C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/")
-    file_list_rslt = [file for file in lists if file.startswith("loopFinal_") and file.find(name) > 0]
+    file_list_rslt = [file for file in lists if file.startswith("loopFinal_") and file.find(name) > 0 and file.endswith(loopStr)]
 
     # 결과 합치기
     fResultMid = pd.DataFrame()
@@ -766,7 +767,7 @@ def makeFinalSet(path, name, paramLoop):
     fResultMid = fResultMid.sort_values('dvsb', ascending=False)  # dvsb가 좋은 순서로 정렬
 
     limitCnt = data.value_counts('pur_gubn5')[0] * calcRatioLoop(data) * 0.01
-    fResultMid = fResultMid[fResultMid['dvsb'] > limitCnt - 2]
+    fResultMid = fResultMid[(fResultMid['dvsb'] > limitCnt - 2) & (fResultMid['bcnt'] < 1)]
     fResultMid = fResultMid.sort_values('dvsb', ascending=False)
     fResultMid = fResultMid.drop_duplicates()
 
@@ -784,8 +785,8 @@ def makeFinalSet(path, name, paramLoop):
         fResultMid['rDvsb'].iloc[m] = lvdvsb
         fResultMid['vIndex'].iloc[m] = lvindex
 
-        # lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = checkCondition(data, fResultMid.iloc[m]['condi'])
-        # fResultMid['index'].iloc[m] = lvindex
+        lvindex, lvdcnt, lvbcnt, lvdvsb, lvData = checkCondition(data, fResultMid.iloc[m]['condi'])
+        fResultMid['index'].iloc[m] = lvindex
     
     # limitCnt = 10
     # 결과 중 rBcnt 0인 애들을 모은 후 삭제
@@ -838,32 +839,69 @@ def checkCondition(ckData, ckCond):
         ckCond = pd.DataFrame(ckCond.split(' AND '))
 
         for i in range(0, ckCond.shape[0]):
-            if ckCond.iloc[i, 0].find('<=') > 0:
-                con = ckCond.iloc[i, 0].split('<=')[0]
-                con = str(con).replace(' ', '')
+            # print(str(i))
+            if ckCond.iloc[i, 0].find(' OR ') < 0:
+                if ckCond.iloc[i, 0].find('<=') > 0:
+                    con = ckCond.iloc[i, 0].split('<=')[0]
+                    con = str(con).replace(' ', '')
 
-                try:
-                    val = float(ckCond.iloc[i, 0].split('<=')[1])
-                    ckData = ckData[ckData[con] <= val]
-                except Exception as e:
-                    val = ckCond.iloc[i, 0].split('<=')[1]
-                    val = str(val).replace(' ', '')
-                    ckData = ckData[ckData[con] <= ckData[val]]
-                    pass
+                    try:
+                        val = float(ckCond.iloc[i, 0].split('<=')[1])
+                        ckData = ckData[ckData[con] <= val]
+                    except Exception as e:
+                        val = ckCond.iloc[i, 0].split('<=')[1]
+                        val = str(val).replace(' ', '')
+                        ckData = ckData[ckData[con] <= ckData[val]]
+                        print(e)
+                        pass
 
+                else:
+                    con = ckCond.iloc[i, 0].split('>')[0]
+                    con = str(con).replace(' ', '')
+
+                    try:
+                        val = float(ckCond.iloc[i, 0].split('>')[1])
+                        ckData = ckData[ckData[con] > val]
+                    except Exception as e:
+                        val = ckCond.iloc[i, 0].split('>')[1]
+                        val = str(val).replace(' ', '')
+                        ckData = ckData[ckData[con] > ckData[val]]
+                        print(e)
+                        pass
             else:
-                con = ckCond.iloc[i, 0].split('>')[0]
-                con = str(con).replace(' ', '')
+                ckCondOr = pd.DataFrame(ckCond.iloc[i, 0].split(' OR '))
+                tmpOrData = pd.DataFrame()
 
-                try:
-                    val = float(ckCond.iloc[i, 0].split('>')[1])
-                    ckData = ckData[ckData[con] > val]
-                except Exception as e:
-                    val = ckCond.iloc[i, 0].split('>')[1]
-                    val = str(val).replace(' ', '')
-                    ckData = ckData[ckData[con] > ckData[val]]
-                    pass
+                for x in range(0, ckCondOr.shape[0]):
+                    if ckCond.iloc[x, 0].find('<=') > 0:
+                        con = ckCond.iloc[x, 0].split('<=')[0]
+                        con = str(con).replace(' ', '')
 
+                        try:
+                            val = float(ckCond.iloc[x, 0].split('<=')[1])
+                            tmpOrData = tmpOrData.append(ckData[ckData[con] <= val])
+                        except Exception as e:
+                            val = ckCond.iloc[x, 0].split('<=')[1]
+                            val = str(val).replace(' ', '')
+                            tmpOrData = tmpOrData.append(ckData[ckData[con] <= ckData[val]])
+                            print(e)
+                            pass
+
+                    else:
+                        con = ckCond.iloc[x, 0].split('>')[0]
+                        con = str(con).replace(' ', '')
+
+                        try:
+                            val = float(ckCond.iloc[x, 0].split('>')[1])
+                            tmpOrData = tmpOrData.append(ckData[ckData[con] > val])
+                        except Exception as e:
+                            val = ckCond.iloc[x, 0].split('>')[1]
+                            val = str(val).replace(' ', '')
+                            tmpOrData = tmpOrData.append(ckData[ckData[con] > ckData[val]])
+                            print(e)
+                            pass
+                tmpOrData = tmpOrData.drop_duplicates()
+                ckData = tmpOrData
     except:
         ckData = pd.DataFrame()
         pass
@@ -1580,10 +1618,10 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
     # vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond, lastYn = 0, paramLevel, paramLastRatio, limitCnt, name, data, '', 'N'
     tmpMkL = pd.DataFrame()
 
-    trees = pd.DataFrame([('tree3', 4)], columns=('treeNm', 'branch'))
+    trees = pd.DataFrame([('tree1', 4)], columns=('treeNm', 'branch'))
     # trees = pd.DataFrame([('tree4', 4)], columns=('treeNm', 'branch'))
-    # trees = trees.append(pd.DataFrame([('tree2', 4)], columns=('treeNm', 'branch')))
-    # trees = trees.append(pd.DataFrame([('tree3', 4)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree2', 4)], columns=('treeNm', 'branch')))
+    trees = trees.append(pd.DataFrame([('tree3', 4)], columns=('treeNm', 'branch')))
     trees = trees.append(pd.DataFrame([('tree4', 4)], columns=('treeNm', 'branch')))
     trees = trees.append(pd.DataFrame([('tree5', 4)], columns=('treeNm', 'branch')))
     trees = trees.append(pd.DataFrame([('tree6', 2)], columns=('treeNm', 'branch')))
@@ -1687,7 +1725,7 @@ def makeLevel(vLoop, paramLevel, paramLastRatio, limitCnt, name, data, initCond,
                         pass
 
         try:
-            tmpMkL.to_csv(
+            tmpMkL[(tmpMkL['dcnt'] >= limitCnt) & (tmpMkL['bcnt'] < 1)].sort_values('dvsb', ascending=False).to_csv(
                 "C:/Users/Shine_anal/PycharmProjects/anlaysis/pickle/RESULTNEW/[Loop - " + str(vLoop) + "][MD][" +
                 trees.iloc[row].treeNm + "]" + name + "_result.csv")
         except:
